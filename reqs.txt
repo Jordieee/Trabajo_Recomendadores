@@ -1,0 +1,409 @@
+Trabajo 2
+Datos
+SR
+Sistemas Recomendadores
+
+Los elementos a 
+recomendar (ítems) son 
+películas del dataset 
+“
+the
+ movies
+ dataset”
+El objetivo es conseguir 
+una lista de ítems 
+recomendados 
+adaptada al usuario
+Para ello, se calcula un 
+ratio de interés del 
+usuario para cada ítem
+Se recomiendan los 
+ítems de mayor ratio
+Objetivos
+2
+El objetivo de esta 
+parte del trabajo es
+Preparar la forma en la 
+que se almacenan los 
+datos de los ficheros 
+del dataset
+Definir las estructuras 
+de datos necesarias 
+para el funcionamiento 
+del recomendador
+Objetivos
+3
+El dataset se ha obtenido del siguiente enlace: 
+https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset
+Se proporcionan dos versiones del dataset
+• Original
+• Procesada: se elimina cierta información y se eliminan películas
+Ambas versiones se basan en películas de Imdb
+Dataset
+4
+
+Se recomienda usar la versión procesada
+Ficheros csv que contienen parte de los datos del dataset
+• Se han eliminado las películas de habla no inglesa
+• Se han eliminado aquellas películas que no estaban puntuadas
+• Se han eliminado del fichero de keywords aquellas películas que no tenían keywords o que los 
+keywords estaban en idioma diferente al inglés
+• Codificados UTF-8
+Esto supone que habrá películas que aparezcan en algunos ficheros que no existan 
+en otros
+• No se deben recomendar películas que no estén en el fichero películas.csv
+Dataset
+5
+6
+
+Las películas 
+están 
+clasificadas 
+en 20 
+géneros
+El fichero 
+géneros.csv
+contiene 
+estos datos
+En el fichero 
+aparece
+• Identificador
+• Identificador 
+en el dataset
+• Genero en 
+ingles
+• Género en 
+castellano
+Ficheros del dataset: clasificación
+7
+id IdDataset Genero GeneroSP
+0 12 Adventure Aventura
+1 14 Fantasy Fantas¡a
+2 16 Animation Animaci¢n
+3 18 Drama Drama
+4 27 Horror Terror
+5 28 Action Acción
+6 35 Comedy Comedia
+7 36 History Historica
+8 37 Western Oeste
+9 53 Thriller Suspense
+10 80 Crime Crimen
+11 99 Documentary Documental
+12 878 Science Fiction Ciencia ficción
+13 9648 Mystery Misterio
+14 10402 Music Musical
+15 10749 Romance Romance
+16 10751 Family Familiar
+17 10752 War Guerra
+18 10769 Foreign Extranjera
+19 10770 TV Movie TV
+Además, las 
+películas tienen 
+asociadas 
+etiquetas que han 
+dado los usuarios
+Se encuentran en 
+el fichero 
+keyword.csv
+No todas las 
+películas tienen 
+etiquetas
+Cada película 
+tiene un máximo 
+de 12 etiquetas 
+(en el dataset 
+original hay más)
+El fichero 
+contiene
+•Código de la película
+•Nº de etiquetas
+•Tantas columnas 
+como etiquetas
+Ficheros del dataset: etiquetas
+8
+id contador keyword keyword keyword
+2 7 underdog prison factory worker
+3 4 salesclerk helsinki garbage
+5 9 hotel witch bet
+6 5 chicago drug dealer boxing match
+11 12 android galaxy hermit
+9
+
+• Son las películas del dataset original de habla inglesa
+• Se han eliminado también las películas no 
+clasificadas y las que no han sido puntuadas por 
+ningún usuario
+• Contiene únicamente los datos del dataset del 
+fichero 
+movies_metadata.csv que se consideran 
+interesantes (y se han separado por columnas)
+27.840 películas (original 45.000)
+Ficheros del dataset: peliculas.csv
+10
+• Identificador de la película
+• Identificador en Imdb: si se busca dentro de imdb con este identificador, se 
+accede a los datos
+• Título
+• Path al poster de la película: http://www.omdbapi.com/
+• Puntuación media de los usuarios (en el momento en el que se creó el 
+dataset)
+• Número de puntuaciones de usuarios (permite saber lo fiable que es la 
+puntuación media)
+• Número de géneros en los que está clasificada (una película puede estar 
+clasificada en más de un género)
+• Código de los géneros en los que está clasificada
+Contiene
+Ficheros del dataset: 
+peliculas.csv
+11
+12
+
+Fichero de ratios
+• Ratings_small.csv
+• Contiene 100.004 puntuaciones de usuarios a películas. Los usuarios van del 1 al 
+671
+• Contiene
+• Identificador de usuario
+• Identificador de película
+• Puntuación: valor float entre 0.5 y 5
+Se ha adjuntado otro fichero Ratings.csv, pero podéis usar el pequeño
+Ficheros del dataset: ratings
+13
+El dataset no contiene datos de 
+usuarios
+Problema para la recomendación
+•No se puede usar el SR Demográfico
+Ficheros del dataset
+14
+15
+
+División de los datos del dataset
+Training set
+Datos con los que se entrena el sistema. 
+Simula la interacción de los usuarios con 
+el sistema, hasta el momento actual 
+Test set
+Usado para obtener resultados sobre la 
+bondad de la recomendación ofrecida
+Training 
+set
+ Test set
+ Dataset
+16
+División de los datos del dataset
+17
+
+División de los datos del dataset
+18
+Hacer la división del dataset
+•Base o entrenamiento: 70%
+•Test: 30%
+División de los datos del dataset
+19
+20
+
+Identificador de 
+usuario
+Modelo de 
+preferencias del 
+usuario
+Preferencias
+Histórico de 
+interacción del 
+usuario con el 
+sistema 
+Conjunto de 
+ítems puntuados 
+por el usuario (y 
+su ratio) del 
+dataset de 
+entrenamiento
+Información interna 
+del SR
+Información que 
+el SR calcula, y 
+que facilita el 
+proceso de 
+recomendación: 
+vecinos,…
+Perfil de usuario
+21
+Identificador de usuario
+Se crea un perfil de usuario por cada uno 
+de los usuarios que han puntuado ítems
+Perfil de usuario: identificador
+22
+Contiene el grado de 
+interés del usuario en 
+cada una de los 20 
+géneros de películas
+Se puede usar un vector, 
+por ejemplo, donde la 
+posición 0 represente el 
+género 12,… y la posición 
+19, el género 10770
+Perfil de usuario: modelo de preferencias
+23
+0
+ 20
+ 50
+ 90
+0 1 2 … 19
+id IdDataset Genero GeneroSP
+0 12 Adventure Aventura
+1 14 Fantasy Fantas¡a
+2 16 Animation Animaci¢n
+3 18 Drama Drama
+4 27 Horror Terror
+5 28 Action Acción
+6 35 Comedy Comedia
+7 36 History Historica
+8 37 Western Oeste
+9 53 Thriller Suspense
+10 80 Crime Crimen
+11 99 Documentary Documental
+12 878 Science Fiction Ciencia ficción
+13 9648 Mystery Misterio
+14 10402 Music Musical
+15 10749 Romance Romance
+16 10751 Family Familiar
+17 10752 War Guerra
+18 10769 Foreign Extranjera
+19 10770 TV Movie TV
+Usuario del dataset
+Inferir las preferencias de las 
+puntuaciones de películas del 
+fichero de entrenamiento
+Usuario registrado
+Se piden las preferencias en el 
+momento del registro
+Perfil de usuario: modelo de preferencias
+24
+0
+ 20
+ 50
+ 90
+0 1 2 … 19
+No disponemos de 
+información sobre los gustos 
+del usuario, por tanto habrá 
+que inferirlo de las películas 
+que ha puntuado
+Aconsejable convertir las 
+puntuaciones del dataset a 
+valores entre 0 y 100
+Si un usuario no ha puntuado 
+películas de esa categoría, 
+poner un 0
+Decidir a partir de que valor 
+se considera puntuar 
+favorablemente y 
+desfavorablemente
+Datos a tener en cuenta para 
+obtener el ratio de interés 
+del usuario en la preferencia
+• Nº de películas puntuadas 
+clasificadas en la preferencia
+• Puntuaciones dadas a cada película
+Perfil de usuario: modelo de preferencias de 
+usuarios del dataset
+25
+0
+ 20
+ 50
+ 90
+0 1 2 … 19
+Usar los datos de entrenamiento
+Usar las películas que ha puntuado favorablemente
+Obtener cuales son las categorías en las que están clasificadas esas películas
+Obtener el ratio de interés del usuario en la categoría
+Perfil de usuario: preferencias
+26
+0
+ 20
+ 50
+ 90
+0 1 2 … 19
+Histórico de interacción 
+del usuario con el 
+sistema
+Usar solo el fichero de 
+entrenamiento
+Almacenar en el 
+histórico las películas 
+vistas por el usuario, 
+junto con su 
+puntuación
+La puntuación es un 
+valor entre 0.5 y 5
+Perfil de usuario: histórico
+27
+Perfil de usuario: información interna
+28
+Información interna del SR
+• Los SR necesitan almacenar información para posteriormente, 
+calcular la recomendación
+• Facilita y hace más rápido el proceso de recomendación
+• Se va a utilizar en el SR Colaborativo
+• Contiene la información de los usuarios que son vecinos del 
+usuario actual (usuarios con mayor grado de afinidad)
+• Inicialmente, no hay información interna
+Perfil de usuario: información interna
+29
+Información interna del SR Colaborativo: vecinos 
+Número de vecinos del 
+usuario
+ Para cada vecino
+Identificador
+ Grado de afinidad con el 
+vecino (valor entre 0 y 100)
+
+30
+
+Resultado de la recomendación
+31
+Lista de ítems 
+recomendados a un 
+usuario
+• Lista que contiene 
+todas las películas que 
+el usuario no ha visto 
+(no están en su 
+histórico)
+Lista de ítems 
+recomendados para 
+un grupo
+• Lista que contiene 
+todas las películas que 
+ningún usuario del 
+grupo ha visto (no 
+están en sus históricos)
+Resultado de la recomendación
+32
+Lista de ítems recomendados
+• Para cada película debe aparecer:
+• Identificador
+• Ratio de interés del usuario/grupo en la película (calculado por 
+la recomendación)
+• La lista debe estar ordenada por ratio de interés (de mayor a 
+menor)
+• La interfaz de la aplicación mostrará por pantalla los N primeros 
+elementos de la lista (el valor de N lo decidís vosotros)
+MUY IMPORTANTE
+33
+Al haber eliminado películas del 
+fichero películas.csv, el resto de 
+ficheros pueden hacer referencia 
+a películas que no existen
+Cuando los datos se hayan 
+introducido en la aplicación, no 
+pueden haber datos 
+inconsistentes
+
+34
+
+Datos
+35
+Dividir el fichero de ratings en entrenamiento y test
+Crear y rellenar los perfiles de usuario
+Almacenar los datos de las películas
