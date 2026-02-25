@@ -1,0 +1,29 @@
+# Entornos virtuales
+venv/
+.venv/
+env/
+.env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+trabajo2_datos_base.py
+trabajo2_datos_base.txt
+
+# VS Code
+.vscode/
+
+# Datos (opcional, se dejan fuera si son pesados)
+# Data_set/Original/
+# resultados/
+
+# Archivos pesados
+Data_set/Original/
+Data_set/Car_tulas/
+*.zip
