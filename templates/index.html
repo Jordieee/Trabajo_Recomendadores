@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SR Basado en Contenido - Trabajo 3</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass-panel">
+            <div class="logo">
+                <i class="fa-solid fa-film"></i>
+                <h2>CineRecomienda</h2>
+            </div>
+
+            <div class="control-group">
+                <label for="userSelect"><i class="fa-solid fa-user"></i> Seleccionar Usuario</label>
+                <div class="select-wrapper">
+                    <select id="userSelect" class="modern-input">
+                        <option value="">Cargando usuarios...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="tmdbKey"><i class="fa-solid fa-key"></i> TMDB API Key (Opcional)</label>
+                <input type="text" id="tmdbKey" class="modern-input" placeholder="Para cargar pósters reales"
+                    title="Si la dejas vacía, se usarán pósters por defecto.">
+                <small>Consigue tu key en <a href="https://www.themoviedb.org/settings/api"
+                        target="_blank">themoviedb.org</a></small>
+            </div>
+
+            <button id="btnRecommend" class="primary-btn" disabled>
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Obtener Recomendaciones
+            </button>
+
+            <div class="sidebar-footer">
+                <p>SR Basado en Contenido<br>Trabajo 3</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Initial State -->
+            <div id="initialState" class="state-container">
+                <div class="hero-text">
+                    <h1>Descubre tu próxima <span>película favorita</span></h1>
+                    <p>Selecciona un usuario en el panel izquierdo para ver sus preferencias y películas recomendadas
+                        basadas en filtrado de contenido.</p>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="state-container hidden">
+                <div class="loader"></div>
+                <p>Analizando catálogo y calculando r(u,i)...</p>
+            </div>
+
+            <!-- Results State -->
+            <div id="resultsState" class="state-container hidden">
+
+                <section class="preferences-section glass-panel">
+                    <h3><i class="fa-solid fa-heart"></i> Perfil de Preferencias Top</h3>
+                    <div id="preferencesContainer" class="preferences-grid">
+                        <!-- Preferences injected via JS -->
+                    </div>
+                </section>
+
+                <section class="recommendations-section">
+                    <div class="section-header">
+                        <h3><i class="fa-solid fa-trophy"></i> Top 10 Recomendaciones</h3>
+                        <div class="formula-badge" title="Fórmula: 0.5×Afinidad + 0.3×Calidad + 0.2×Fiabilidad">
+                            r(u,i) = αA + βC + γF
+                        </div>
+                    </div>
+                    <div id="moviesGrid" class="movies-grid">
+                        <!-- Movies injected via JS -->
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Script imports -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
