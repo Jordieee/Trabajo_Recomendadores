@@ -39,7 +39,11 @@ df_pref_union = df_pref_norm.fillna(0.0)
 # =============================================================================
 print("📊 [T4] Construyendo matriz usuarios × películas...")
 
-rating_matrix: pd.DataFrame = df_ratings.pivot_table(
+# Asegurar que solo consideramos ratings de películas que realmente existan en nuestro catálogo
+movies_in_peliculas = set(df_peliculas['id'].unique())
+df_ratings_valid = df_ratings[df_ratings['movieId'].isin(movies_in_peliculas)]
+
+rating_matrix: pd.DataFrame = df_ratings_valid.pivot_table(
     index='userId', columns='movieId', values='rating', aggfunc='mean'
 )
 
