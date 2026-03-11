@@ -470,6 +470,100 @@ body {
     color: var(--star-active);
 }
 
+/* ALGORITHM TABS */
+.algo-tabs {
+    display: flex;
+    gap: 0.4rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.4rem;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+}
+
+.algo-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.6rem 0.3rem;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.algo-tab i {
+    font-size: 1.1rem;
+}
+
+.algo-tab:hover {
+    color: var(--text-light);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.algo-tab.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: white;
+    box-shadow: 0 3px 10px rgba(139, 92, 246, 0.4);
+}
+
+/* ALGO PILLS on movie cards */
+.algo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.5rem;
+}
+
+.pill-uu {
+    background: rgba(6, 182, 212, 0.15);
+    border: 1px solid rgba(6, 182, 212, 0.4);
+    color: #67e8f9;
+}
+
+.pill-ii {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fcd34d;
+}
+
+/* ITEM tags variant */
+.tag-item {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #fef3c7;
+}
+
+/* COLLAB predicted score */
+.collab-pred {
+    color: #06b6d4;
+}
+
+.pred-suffix {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: 1px;
+}
+
+/* NEIGHBORS GRID */
+.neighbors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
 /* RESPONSIVE */
 @media (max-width: 1024px) {
     .app-container {

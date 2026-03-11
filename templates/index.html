@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SR Basado en Contenido - Trabajo 3</title>
+    <title>CineRecomienda — SR Contenido & Colaborativo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,6 +19,27 @@
                 <h2>CineRecomienda</h2>
             </div>
 
+            <!-- Algorithm Selector -->
+            <div class="control-group">
+                <label><i class="fa-solid fa-sliders"></i> Tipo de Recomendación</label>
+                <div class="algo-tabs" id="algoTabs">
+                    <button class="algo-tab active" data-algo="contenido" title="SR Basado en Contenido (T3)">
+                        <i class="fa-solid fa-tags"></i>
+                        <span>Contenido</span>
+                    </button>
+                    <button class="algo-tab" data-algo="collab-uu" title="SR Colaborativo Usuario-Usuario (T4)">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Usuario</span>
+                    </button>
+                    <button class="algo-tab" data-algo="collab-ii" title="SR Colaborativo Ítem-Ítem (T4)">
+                        <i class="fa-solid fa-film"></i>
+                        <span>Ítem</span>
+                    </button>
+                </div>
+                <small id="algoDescription">Filtra por géneros preferidos del usuario</small>
+            </div>
+
+            <!-- User Selector -->
             <div class="control-group">
                 <label for="userSelect"><i class="fa-solid fa-user"></i> Seleccionar Usuario</label>
                 <div class="select-wrapper">
@@ -28,6 +49,7 @@
                 </div>
             </div>
 
+            <!-- TMDB Key -->
             <div class="control-group">
                 <label for="tmdbKey"><i class="fa-solid fa-key"></i> TMDB API Key (Opcional)</label>
                 <input type="text" id="tmdbKey" class="modern-input" placeholder="Para cargar pósters reales"
@@ -41,7 +63,7 @@
             </button>
 
             <div class="sidebar-footer">
-                <p>SR Basado en Contenido<br>Trabajo 3</p>
+                <p>SR Basado en Contenido &amp; Colaborativo<br>Trabajos 3 &amp; 4</p>
             </div>
         </aside>
 
@@ -51,36 +73,43 @@
             <div id="initialState" class="state-container">
                 <div class="hero-text">
                     <h1>Descubre tu próxima <span>película favorita</span></h1>
-                    <p>Selecciona un usuario en el panel izquierdo para ver sus preferencias y películas recomendadas
-                        basadas en filtrado de contenido.</p>
+                    <p>Selecciona un usuario y el tipo de recomendación en el panel izquierdo.</p>
                 </div>
             </div>
 
             <!-- Loading State -->
             <div id="loadingState" class="state-container hidden">
                 <div class="loader"></div>
-                <p>Analizando catálogo y calculando r(u,i)...</p>
+                <p id="loadingText">Calculando recomendaciones...</p>
             </div>
 
             <!-- Results State -->
             <div id="resultsState" class="state-container hidden">
 
-                <section class="preferences-section glass-panel">
+                <!-- CONTENT: preferences panel (only for content-based) -->
+                <section id="preferencesSection" class="preferences-section glass-panel hidden">
                     <h3><i class="fa-solid fa-heart"></i> Perfil de Preferencias Top</h3>
                     <div id="preferencesContainer" class="preferences-grid">
-                        <!-- Preferences injected via JS -->
+                        <!-- Injected via JS -->
                     </div>
                 </section>
 
+                <!-- COLLAB: Neighbors / Similar-users panel -->
+                <section id="neighborsSection" class="preferences-section glass-panel hidden">
+                    <h3 id="neighborsSectionTitle"><i class="fa-solid fa-users"></i> Vecinos más similares</h3>
+                    <div id="neighborsContainer" class="neighbors-grid">
+                        <!-- Injected via JS -->
+                    </div>
+                </section>
+
+                <!-- Recommendations Grid -->
                 <section class="recommendations-section">
                     <div class="section-header">
                         <h3><i class="fa-solid fa-trophy"></i> Top 10 Recomendaciones</h3>
-                        <div class="formula-badge" title="Fórmula: 0.5×Afinidad + 0.3×Calidad + 0.2×Fiabilidad">
-                            r(u,i) = αA + βC + γF
-                        </div>
+                        <div id="formulaBadge" class="formula-badge" title="">r(u,i) = αA + βC + γF</div>
                     </div>
                     <div id="moviesGrid" class="movies-grid">
-                        <!-- Movies injected via JS -->
+                        <!-- Injected via JS -->
                     </div>
                 </section>
 
@@ -88,7 +117,6 @@
         </main>
     </div>
 
-    <!-- Script imports -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 

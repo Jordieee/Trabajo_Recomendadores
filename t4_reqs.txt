@@ -1,0 +1,365 @@
+Trabajo 4
+SR colaborativo
+SR
+Sistemas Recomendadores
+Buscar usuarios similares al usuario actual 
+(vecinos)
+Se recomiendan ítems que les han gustado a los 
+vecinos
+Para la búsqueda de vecinos se utilizará el 
+coeficiente de correlación de Pearson
+SR colaborativo
+2
+3Búsqueda de vecinos
+Para buscar vecinos se 
+podría
+Pero, hay más de 27000 
+películas, por lo que, si se 
+usan ítems, las matrices 
+serían muy grandes y 
+habría mucho sparsity
+• Usar las preferencias de los 
+usuarios
+• Usar los ítems puntuados 
+por los usuarios (histórico)
+• Se van a buscar vecinos por 
+preferencias
+• Un vecino será aquel cuyas 
+preferencias se parezcan 
+más a las del usuario
+Vecinos
+4
+Para la búsqueda de vecinos nos interesa que el vector de 
+preferencias tenga la mayor parte de las posiciones rellenas
+De esta forma, una posición a 0 representa que el usuario no 
+está interesado en el género, y no, que no la ha rellenado
+En el SR basado en contenido usábamos un subconjunto de 
+las preferencias del usuario, aquí las usamos todas
+Si no tenemos la mayor parte del vector con datos, puede 
+obtener falsos vecinos
+Preferencias
+5
+Preferencias del SR
+6
+Usuarios dataset
+Usuarios nuevos
+Preferencias
+Se obtienen las 
+preferencias de las 
+películas puntuadas 
+favorablemente
+Se piden las preferencias al 
+usuario cuando se registra: 
+cuantas más, mejor 
+SR basado en 
+contenido
+Filtrar las preferencias y quedarse con las 5-8 de 
+mayor ratio
+SR colaborativo
+Todas las preferencias
+7Búsqueda de vecinos
+Matriz de ratios
+8
+P1
+P2
+P3
+…
+P19
+U1
+U2
+…
+Se crea una matriz donde las filas son los 
+usuarios y las columnas las preferencias
+Se comparan todos los usuarios con todos
+¿Qué preferencias usar? Intersección o unión
+Intersección
+• Buscar vecinos usando solo 
+las preferencias comunes a 
+ambos usuarios
+Unión
+• Usar las preferencias que 
+uno u otro tenga 
+(rellenando a 0)
+• Usar todas las preferencias
+9
+0
+1
+2
+3
+…
+n
+u1
+0
+50
+34
+70
+u2
+2
+10
+70
+80
+Inters.
+0
+1
+2
+3
+…
+n
+u1
+0
+50
+70
+u2
+2
+10
+80
+Unión
+0
+1
+2
+3
+…
+n
+u1
+0
+50
+34
+0
+70
+u2
+2
+10
+0
+70
+80
+¿Qué preferencias usar? Intersección o unión
+Se deja libertad para usar la técnica que queráis
+Hay que justificar la técnica elegida
+Posibilidad
+• Dados dos usuarios
+• Si tienen más de 10 preferencias comunes, usar la intersección
+• Si no, usar unión
+10
+¿Qué preferencias usar? Intersección o unión
+Si se usa la unión
+• Las preferencias no informadas 
+de un usuario, se rellenan a 0
+Si no hay suficientes 
+preferencias con valor 
+puede dar lugar a falsos 
+vecinos
+11
+Unión
+0
+1
+2
+3
+…
+n
+u1
+0
+50
+34
+0
+70
+u2
+2
+10
+0
+70
+80
+0
+1
+2
+3
+…
+n
+u1
+0
+50
+34
+70
+u2
+2
+10
+70
+80
+Usuario del dataset
+Pre-proceso para calcular los 
+vecinos de todos los usuarios del 
+dataset
+Rellenar la lista de vecinos de cada 
+usuario en el perfil de cada usuario
+Usuario nuevo
+El usuario se registra
+Se piden las preferencias
+Se calculan los vecinos
+Se almacenan en el perfil del usuario
+Obtener vecinos
+12
+Identificador de 
+usuario
+Modelo de 
+preferencias del 
+usuario
+Preferencias 
+completas
+Histórico de 
+interacción del 
+usuario con el 
+sistema 
+Conjunto de 
+ítems del 
+usuario, 
+junto con el 
+ratio dado 
+al ítem
+Información interna 
+del SR
+Lista de 
+vecinos
+Perfil de usuario
+13
+Se calculan sus vecinos 
+usando Pearson (todos 
+con todos)
+Recordad que la relación 
+de vecindad es 
+asimétrica, pero el 
+coeficiente de 
+correlación es simétrico
+Vecinos
+14
+Los vecinos serán 
+aquellos cuyo coeficiente 
+de correlación entre sus 
+preferencias sea mayor
+Número de vecinos
+• Los N vecinos de mayor 
+ratio
+• Los vecinos que superen 
+un umbral
+• No más de 40-50
+Obtener vecinos
+15
+Correlación de Pearson
+La similitud se suele 
+calcular con el coeficiente 
+de correlación de Pearson
+• Se usa Pearson por ser capaz de 
+calcular similitudes y diferencias
+• Independiente de la escala de 
+calificación
+Expresión numérica del 
+grado de relación 
+existente entre dos 
+vectores
+Para cada usuario, se 
+obtiene el coeficiente de 
+correlación de Pearson (r) 
+entre el usuario u y cada 
+uno de los usuarios del 
+sistema (u’)
+16
+𝑟𝑢𝑢′ =
+𝐶𝑜𝑣(𝑣𝑢, 𝑣𝑢′)
+𝑉𝑎𝑟(𝑣𝑢) ∙𝑉𝑎𝑟(𝑣𝑢′)
+Correlación de Pearson
+•Correlación positiva perfecta
+•Dependencia total directa entre los dos vectores: cuando uno de ellos aumenta, el otro 
+también lo hace en proporción constante
+r == 1
+•Correlación positiva
+•A mayor valor, mayor correlación
+0 < r < 1
+•No existe relación lineal
+r == 0
+•Correlación negativa
+-1 < r < 0
+•Correlación negativa perfecta
+•Dependencia total inversa entre los dos vectores: cuando uno de ellos aumenta, el otro 
+disminuye en proporción constante
+r == -1
+17
+Obtener vecinos
+18
+Rellenar los vecinos en el perfil de usuario
+Número de vecinos del usuario
+Variable, depende del usuario
+Para cada vecino
+Identificador
+Grado de afinidad con el vecino 
+(valor entre 0 y 100)
+Vu= {(u’, rau’) / u’U, rau’[0..100]}
+u es el usuario para el que se solicita la 
+recomendación
+rau’ es el ratio de afinidad entre u y u’. Puede 
+ser un valor entre 0..100 o en el rango que se 
+desee
+Crear una matriz con las preferencias de los usuarios del sistema
+Cada fila es un usuario
+Cada columna es una preferencia (tener en cuenta unión/intersección)
+Para cada par de usuarios u y u’, calcular Pearson
+Repetir el proceso para todos los usuarios
+Seleccionar los vecinos con mayor afinidad (valores más cercanos a 1)
+19
+Proceso de obtención de vecinos
+20Obtener la lista de ítems recomendados
+Para cada vecino
+• Obtener los ítems del histórico del vecino puntuados favorablemente
+• Decidir que significa “favorablemente”
+• Eliminar los ítems repetidos (más de un usuario tiene el ítem en el 
+histórico)
+• Combinar los ratios de los ítems repetidos (por ejemplo, usar la 
+media de los ratios, ponderada con la afinidad con el vecino y 
+teniendo en cuenta nº de repeticiones)
+• Calcular el ratio de interés del ítem para el usuario
+• Eliminar de la lista los ítems ya vistos por el usuario (están en su 
+histórico)
+Obtener los ítems recomendados
+21
+El ratio de 
+interés del 
+ítem para u
+puede 
+depender de
+Si el ítem está repetido 
+en más de un vecino
+Ratio de afinidad con 
+el vecino
+Puntuación del vecino 
+al ítem
+Obtener los ítems recomendados
+22
+Sea u’jVu
+Sea rau’ el ratio de afinidad del usuario u con su vecino u’
+Sea ru’i el ratio que dio el usuario u’ al ítem i 
+El ratio predicho del ítem i para el usuario u, se podría calcular como:
+Ejemplo: ratio de interés del usuario u en el ítem i
+23
+𝑟𝑢𝑖=
+σ𝑢′∈𝑉𝑢,𝑖∈𝐼𝑢′ 𝑟𝑎𝑢′. 𝑟𝑢′
+𝑖
+σ𝑢′∈𝑉𝑢,𝑖∈𝐼𝑢′ |𝑟𝑎𝑢′ |
+Una vez se obtiene la lista de ítems de los 
+vecinos
+Se ordena por ratio
+Se muestran N ítems en la interfaz
+Proceso similar al SRBC
+Obtener los ítems recomendados
+24
+Usuario del dataset o 
+usuario ya registrado
+Un usuario solicita la 
+recomendación (ya tiene calculados 
+los vecinos)
+Se le muestra la recomendación 
+obtenida
+Usuario nuevo
+Registrar al usuario
+• Se obtienen las preferencias
+• Se calculan sus vecinos
+Proceso de recomendación
+• Se le muestra la recomendación obtenida
+Proceso de recomendación
+25

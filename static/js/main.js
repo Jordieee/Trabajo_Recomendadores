@@ -1,16 +1,52 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // ── DOM refs ──────────────────────────────────────────────────────────────
     const userSelect = document.getElementById('userSelect');
     const btnRecommend = document.getElementById('btnRecommend');
     const tmdbKeyInput = document.getElementById('tmdbKey');
+    const algoTabs = document.getElementById('algoTabs');
+    const algoDescription = document.getElementById('algoDescription');
+    const formulaBadge = document.getElementById('formulaBadge');
+    const loadingText = document.getElementById('loadingText');
 
     const initialState = document.getElementById('initialState');
     const loadingState = document.getElementById('loadingState');
     const resultsState = document.getElementById('resultsState');
+    const preferencesSection = document.getElementById('preferencesSection');
+    const neighborsSection = document.getElementById('neighborsSection');
+    const neighborsSectionTitle = document.getElementById('neighborsSectionTitle');
 
     const preferencesContainer = document.getElementById('preferencesContainer');
+    const neighborsContainer = document.getElementById('neighborsContainer');
     const moviesGrid = document.getElementById('moviesGrid');
 
-    // Cargar la lista de usuarios al inicio
+    // ── Algorithm state ───────────────────────────────────────────────────────
+    let currentAlgo = 'contenido';
+
+    const ALGO_META = {
+        'contenido': {
+            desc: 'Filtra por géneros preferidos del usuario',
+            badge: 'r(u,i) = αA + βC + γF',
+            badgeTitle: 'Fórmula: 0.5×Afinidad + 0.3×Calidad + 0.2×Fiabilidad',
+            loading: 'Analizando catálogo y calculando r(u,i)...',
+            apiUrl: (uid) => `/api/recommend/${uid}`,
+        },
+        'collab-uu': {
+            desc: 'Usuarios con gustos similares recomiendan (Pearson)',
+            badge: 'r̂(u,i) = μ_u + Σ sim·(r_v,i − μ_v) / Σ|sim|',
+            badgeTitle: 'User-User: promedio ponderado por similitud Pearson',
+            loading: 'Buscando vecinos similares y prediciendo ratings...',
+            apiUrl: (uid) => `/api/recommend/collab-uu/${uid}`,
+        },
+        'collab-ii': {
+            desc: 'Películas similares a las que ya valoraste (Pearson)',
+            badge: 'r̂(u,i) = μ_i + Σ sim(i,j)·(r_u,j − μ_j) / Σ|sim|',
+            badgeTitle: 'Item-Item: similitud Pearson entre ítems',
+            loading: 'Calculando similitudes entre películas...',
+            apiUrl: (uid) => `/api/recommend/collab-ii/${uid}`,
+        },
+    };
+
+    // ── Load users ────────────────────────────────────────────────────────────
     fetch('/api/users')
         .then(res => res.json())
         .then(users => {
@@ -31,31 +67,64 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRecommend.disabled = !e.target.value;
     });
 
-    // Acción principal: Obtener Recomendaciones
+    // ── Algorithm tab switching ───────────────────────────────────────────────
+    algoTabs.querySelectorAll('.algo-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            algoTabs.querySelectorAll('.algo-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentAlgo = tab.dataset.algo;
+            algoDescription.textContent = ALGO_META[currentAlgo].desc;
+        });
+    });
+
+    // ── Main CTA ──────────────────────────────────────────────────────────────
     btnRecommend.addEventListener('click', async () => {
         const userId = userSelect.value;
         if (!userId) return;
 
-        // Mostrar Loading
+        const meta = ALGO_META[currentAlgo];
+
+        // Show loading
         initialState.classList.add('hidden');
         resultsState.classList.add('hidden');
         loadingState.classList.remove('hidden');
+        loadingText.textContent = meta.loading;
 
         try {
-            const res = await fetch(`/api/recommend/${userId}`);
+            const res = await fetch(meta.apiUrl(userId));
             const data = await res.json();
 
-            if (res.ok) {
-                renderPreferences(data.preferencias);
-                await renderMovies(data.recomendaciones);
-
-                loadingState.classList.add('hidden');
-                resultsState.classList.remove('hidden');
-            } else {
+            if (!res.ok) {
                 alert(`Error: ${data.error}`);
                 loadingState.classList.add('hidden');
                 initialState.classList.remove('hidden');
+                return;
             }
+
+            // Update formula badge
+            formulaBadge.textContent = meta.badge;
+            formulaBadge.title = meta.badgeTitle;
+
+            // Render sections based on algorithm
+            if (currentAlgo === 'contenido') {
+                renderPreferences(data.preferencias || {});
+                preferencesSection.classList.remove('hidden');
+                neighborsSection.classList.add('hidden');
+                await renderMoviesContent(data.recomendaciones);
+            } else if (currentAlgo === 'collab-uu') {
+                renderNeighbors(data.vecinos || [], 'usuarios');
+                neighborsSection.classList.remove('hidden');
+                preferencesSection.classList.add('hidden');
+                await renderMoviesCollab(data.recomendaciones, 'uu');
+            } else {
+                neighborsSection.classList.add('hidden');
+                preferencesSection.classList.add('hidden');
+                await renderMoviesCollab(data.recomendaciones, 'ii');
+            }
+
+            loadingState.classList.add('hidden');
+            resultsState.classList.remove('hidden');
+
         } catch (err) {
             console.error(err);
             alert('Error al conectar con la API.');
@@ -64,56 +133,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ── Render: Content-based preferences ────────────────────────────────────
     function renderPreferences(prefObj) {
         preferencesContainer.innerHTML = '';
-
-        // Convert to array and sort by value desc
         const sortedPrefs = Object.entries(prefObj).sort((a, b) => b[1] - a[1]);
-
-        // Find max value to scale the progress bars
         const maxVal = sortedPrefs.length > 0 ? sortedPrefs[0][1] : 1;
 
         sortedPrefs.forEach(([genre, value]) => {
             const percentage = (value / maxVal) * 100;
-            const displayVal = value.toFixed(3);
-
             const card = document.createElement('div');
             card.className = 'pref-card';
             card.innerHTML = `
                 <div class="pref-name">
                     <span>${genre}</span>
-                    <span class="text-muted">${displayVal}</span>
+                    <span class="text-muted">${value.toFixed(3)}</span>
                 </div>
                 <div class="pref-bar-bg">
                     <div class="pref-bar-fill" style="width: 0%"></div>
                 </div>
             `;
             preferencesContainer.appendChild(card);
-
-            // Trigger animation after append
             setTimeout(() => {
                 card.querySelector('.pref-bar-fill').style.width = `${percentage}%`;
             }, 50);
         });
     }
 
-    async function renderMovies(movies) {
+    // ── Render: Neighbors (User-User) ─────────────────────────────────────────
+    function renderNeighbors(neighbors, type) {
+        neighborsContainer.innerHTML = '';
+        neighborsSectionTitle.innerHTML = `<i class="fa-solid fa-users"></i> Vecinos más similares`;
+
+        if (!neighbors.length) {
+            neighborsContainer.innerHTML = '<p style="color:var(--text-muted)">No se encontraron vecinos.</p>';
+            return;
+        }
+
+        const maxSim = neighbors[0].similitud || 1;
+        neighbors.forEach(n => {
+            const pct = ((n.similitud / maxSim) * 100).toFixed(0);
+            const badge = document.createElement('div');
+            badge.className = 'pref-card';
+            badge.innerHTML = `
+                <div class="pref-name">
+                    <span><i class="fa-solid fa-user-circle"></i> Usuario ${n.userId}</span>
+                    <span class="text-muted">sim: ${n.similitud.toFixed(3)}</span>
+                </div>
+                <div class="pref-bar-bg">
+                    <div class="pref-bar-fill" style="width:0%; background: linear-gradient(90deg, #06b6d4, #3b82f6)"></div>
+                </div>
+            `;
+            neighborsContainer.appendChild(badge);
+            setTimeout(() => {
+                badge.querySelector('.pref-bar-fill').style.width = `${pct}%`;
+            }, 50);
+        });
+    }
+
+    // ── Render: Content-based movie cards ─────────────────────────────────────
+    async function renderMoviesContent(movies) {
         moviesGrid.innerHTML = '';
         const apiKey = tmdbKeyInput.value.trim();
 
         for (let i = 0; i < movies.length; i++) {
             const m = movies[i];
             const rank = i + 1;
-
-            // Basic UI for Movie
             const card = document.createElement('article');
             card.className = 'movie-card';
 
-            // Clean title for TMDB search (remove " (1995)" year part)
             const cleanTitle = m.titulo.replace(/\s*\(\d{4}\)\s*$/, '');
             let posterUrl = `https://via.placeholder.com/300x450/1e293b/94a3b8?text=${encodeURIComponent(cleanTitle)}`;
 
-            // If TMDB key provided, try to search for the poster
             if (apiKey) {
                 try {
                     const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}&language=es-ES`;
@@ -122,17 +212,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.results && data.results.length > 0 && data.results[0].poster_path) {
                         posterUrl = `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}`;
                     }
-                } catch (e) {
-                    console.error('TMDB Search failed for', cleanTitle);
-                }
+                } catch (e) { }
             }
 
-            // Create tag elements for matching genres
-            const tagsHtml = m.generos_match.split(',')
+            const tagsHtml = (m.generos_match || '').split(',')
+                .filter(g => g.trim())
                 .map(g => `<span class="explain-tag">${g.trim()}</span>`)
                 .join('');
 
-            // Star Rating calculation (0-5 stars)
             const scaledScore = m.score_final * 5;
             const starsHtml = getStarsHTML(scaledScore);
 
@@ -143,11 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="movie-info">
                     <h4 class="movie-title">${m.titulo}</h4>
-                    
-                    <div class="explain-tags">
-                        ${tagsHtml}
-                    </div>
-
+                    <div class="explain-tags">${tagsHtml}</div>
                     <div class="score-details">
                         <div class="score-row">
                             <span>Afinidad (${(m.score_afinidad * 100).toFixed(1)}%)</span>
@@ -168,11 +251,98 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="score-text">${m.score_final.toFixed(3)}</div>
                 </div>
             `;
-
             moviesGrid.appendChild(card);
         }
     }
 
+    // ── Render: Collaborative movie cards (UU or II) ──────────────────────────
+    async function renderMoviesCollab(movies, mode) {
+        moviesGrid.innerHTML = '';
+        const apiKey = tmdbKeyInput.value.trim();
+
+        for (let i = 0; i < movies.length; i++) {
+            const m = movies[i];
+            const rank = i + 1;
+            const card = document.createElement('article');
+            card.className = 'movie-card';
+
+            const cleanTitle = m.titulo.replace(/\s*\(\d{4}\)\s*$/, '');
+            let posterUrl = `https://via.placeholder.com/300x450/1e293b/94a3b8?text=${encodeURIComponent(cleanTitle)}`;
+
+            if (apiKey) {
+                try {
+                    const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}&language=es-ES`;
+                    const res = await fetch(searchUrl);
+                    const data = await res.json();
+                    if (data.results && data.results.length > 0 && data.results[0].poster_path) {
+                        posterUrl = `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}`;
+                    }
+                } catch (e) { }
+            }
+
+            // Similarity bar (normalized to 0-100%)
+            const simPct = Math.min(100, Math.max(0, (m.sim_avg || 0) * 100));
+
+            // Item-Item base movies
+            let basePillsHtml = '';
+            if (mode === 'ii' && m.items_base && m.items_base.length > 0) {
+                basePillsHtml = `
+                    <div class="explain-tags" style="margin-top: 0.25rem;">
+                        ${m.items_base.map(t => `<span class="explain-tag tag-item">${t.replace(/\s*\(\d{4}\)$/, '')}</span>`).join('')}
+                    </div>
+                `;
+            }
+
+            // Predicted rating bar — 5 stars scale
+            const starsHtml = getStarsHTML(m.pred_rating);
+
+            // Similarity color based on mode
+            const simColor = mode === 'uu'
+                ? 'linear-gradient(90deg, #06b6d4, #3b82f6)'
+                : 'linear-gradient(90deg, #f59e0b, #ef4444)';
+
+            const modeLabel = mode === 'uu'
+                ? `<span class="algo-pill pill-uu">Usuario-Usuario</span>`
+                : `<span class="algo-pill pill-ii">Ítem-Ítem</span>`;
+
+            const nInfo = mode === 'uu'
+                ? `${m.n_vecinos} vecinos`
+                : `${m.n_items} ítems base`;
+
+            card.innerHTML = `
+                <div class="rank-badge">#${rank}</div>
+                <div class="movie-poster-container">
+                    <img class="movie-poster" src="${posterUrl}" alt="Póster de ${m.titulo}" loading="lazy">
+                </div>
+                <div class="movie-info">
+                    <h4 class="movie-title">${m.titulo}</h4>
+                    ${modeLabel}
+                    ${basePillsHtml}
+                    <div class="score-details" style="margin-top: auto;">
+                        <div class="score-row">
+                            <span>Similitud media</span>
+                            <div class="score-bar-bg">
+                                <div class="score-bar-fill" style="width: ${simPct}%; background: ${simColor}"></div>
+                            </div>
+                            <span style="min-width:38px; text-align:right">${(m.sim_avg || 0).toFixed(2)}</span>
+                        </div>
+                        <div class="score-row">
+                            <span>Basado en</span>
+                            <div class="score-bar-bg"></div>
+                            <span style="min-width:80px; text-align:right; font-size:0.8rem; color:var(--text-muted)">${nInfo}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="score-final-wrap">
+                    <div class="star-rating">${starsHtml}</div>
+                    <div class="score-text collab-pred">${m.pred_rating.toFixed(2)}<span class="pred-suffix">/5</span></div>
+                </div>
+            `;
+            moviesGrid.appendChild(card);
+        }
+    }
+
+    // ── Helper: stars HTML ────────────────────────────────────────────────────
     function getStarsHTML(ratingOutOf5) {
         let html = '';
         for (let i = 1; i <= 5; i++) {
