@@ -117,21 +117,25 @@ def recomendar_usuario_usuario(user_id: int,
         return {'error': f'Usuario {user_id} no encontrado en matriz de preferencias.'}
 
     # Optimización: Computar Pearson vectorizado usando preferencias (unión)
-    prefs_np = df_pref_union.values
+    # FILTRAR: Solo usuarios que están en la matriz de ratings
+    ratings_users = set(rating_matrix.index)
+    df_pref_filtered = df_pref_union[df_pref_union.index.isin(ratings_users)]
+
+    prefs_np = df_pref_filtered.values
     means = prefs_np.mean(axis=1, keepdims=True)
     centered = prefs_np - means
     norms = np.linalg.norm(centered, axis=1)
     
     try:
-        u_idx = df_pref_union.index.get_loc(user_id)
+        u_idx = df_pref_filtered.index.get_loc(user_id)
     except KeyError:
-        return {'error': f'Usuario {user_id} no encontrado.'}
+        return {'error': f'Usuario {user_id} no tiene suficientes ratings para CF.'}
         
     u_centered = centered[u_idx]
     u_norm = norms[u_idx]
     
     similitudes = {}
-    for i, other_id in enumerate(df_pref_union.index):
+    for i, other_id in enumerate(df_pref_filtered.index):
         if other_id == user_id: continue
         if norms[i] == 0 or u_norm == 0: continue
         
@@ -141,7 +145,7 @@ def recomendar_usuario_usuario(user_id: int,
             similitudes[other_id] = float(sim)
             
     if not similitudes:
-        return {'error': 'No se encontraron vecinos con similitud suficiente.'}
+        return {'error': 'No se encontraron vecinos con similitud suficiente en la matriz de ratings.'}
 
     # Vecinos con similitud más alta (k_vecinos = 40-50 como se indica en clase)
     top_vecinos = sorted(similitudes.items(), key=lambda x: x[1], reverse=True)[:k_vecinos]
