@@ -104,5 +104,25 @@ def recommend_collab_ii(user_id):
     })
 
 
+# ── Híbrido (Trabajo 5) ───────────────────────────────────────────────────────
+
+@app.route('/api/recommend/hibrido/<int:user_id>')
+def recommend_hibrido(user_id):
+    """SR Híbrido Ponderado — Trabajo 5."""
+    from trabajo5_sr_hibrido import recomendar_hibrido
+    resultado = recomendar_hibrido(user_id, n_recomendaciones=10)
+    
+    if 'error' in resultado:
+        return jsonify({"error": resultado['error']}), 404
+        
+    return jsonify({
+        "algoritmo": "hibrido",
+        "recomendaciones": resultado['recomendaciones'],
+        "preferencias": resultado['preferencias'],
+        "vecinos": resultado['vecinos'],
+        "alpha": resultado.get('alpha', 0.5),
+        "beta": resultado.get('beta', 0.5)
+    })
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000, threaded=True)

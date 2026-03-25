@@ -44,6 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
             loading: 'Calculando similitudes entre películas...',
             apiUrl: (uid) => `/api/recommend/collab-ii/${uid}`,
         },
+        'hibrido': {
+            desc: 'Ponderación de Contenido y Colaborativo (T5)',
+            badge: 'r(u,i) = α·r_cont + β·r_col',
+            badgeTitle: 'Híbrido Ponderado',
+            loading: 'Calculando perfiles, combinando ratios...',
+            apiUrl: (uid) => `/api/recommend/hibrido/${uid}`,
+        },
     };
 
     // ── Load users ────────────────────────────────────────────────────────────
@@ -116,6 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 neighborsSection.classList.remove('hidden');
                 preferencesSection.classList.add('hidden');
                 await renderMoviesCollab(data.recomendaciones, 'uu');
+            } else if (currentAlgo === 'hibrido') {
+                renderPreferences(data.preferencias || {});
+                renderNeighbors(data.vecinos || [], 'usuarios');
+                preferencesSection.classList.remove('hidden');
+                neighborsSection.classList.remove('hidden');
+                formulaBadge.textContent = `r(u,i) = ${data.alpha}·Cont + ${data.beta}·Collab`;
+                await renderMoviesHibrido(data.recomendaciones);
             } else {
                 neighborsSection.classList.add('hidden');
                 preferencesSection.classList.add('hidden');
@@ -355,5 +369,70 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         return html;
+    }
+
+    // ── Render: Hibrido movie cards ───────────────────────────────────────────
+    async function renderMoviesHibrido(movies) {
+        moviesGrid.innerHTML = '';
+        const apiKey = tmdbKeyInput.value.trim();
+
+        for (let i = 0; i < movies.length; i++) {
+            const m = movies[i];
+            const rank = i + 1;
+            const card = document.createElement('article');
+            card.className = 'movie-card';
+
+            const cleanTitle = m.titulo.replace(/\s*\(\d{4}\)\s*$/, '');
+            let posterUrl = `https://via.placeholder.com/300x450/1e293b/94a3b8?text=${encodeURIComponent(cleanTitle)}`;
+
+            if (apiKey) {
+                try {
+                    const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}&language=es-ES`;
+                    const res = await fetch(searchUrl);
+                    const data = await res.json();
+                    if (data.results && data.results.length > 0 && data.results[0].poster_path) {
+                        posterUrl = `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}`;
+                    }
+                } catch (e) { }
+            }
+
+            const inCont = m.en_cont ? '<span class="algo-pill pill-uu" style="background:#e74c3c;">Contenido</span>' : '';
+            const inCol = m.en_col ? '<span class="algo-pill pill-ii" style="background:#3b82f6;">Colaborativo</span>' : '';
+            
+            // Scaled score to 5 for stars calculation, but the score itself is up to 1
+            const starsHtml = getStarsHTML(m.score_hibrido * 5);
+
+            card.innerHTML = `
+                <div class="rank-badge">#${rank}</div>
+                <div class="movie-poster-container">
+                    <img class="movie-poster" src="${posterUrl}" alt="Póster de ${m.titulo}" loading="lazy">
+                </div>
+                <div class="movie-info">
+                    <h4 class="movie-title">${m.titulo}</h4>
+                    <div style="margin-top: 5px">${inCont} ${inCol}</div>
+                    <div class="score-details" style="margin-top: auto;">
+                        <div class="score-row">
+                            <span>Punt. Basado Cont.</span>
+                            <div class="score-bar-bg">
+                                <div class="score-bar-fill fill-afinidad" style="width: ${m.score_cont * 100}%"></div>
+                            </div>
+                            <span style="min-width:38px; text-align:right">${(m.score_cont).toFixed(2)}</span>
+                        </div>
+                        <div class="score-row">
+                            <span>Punt. Colaborativo</span>
+                            <div class="score-bar-bg">
+                                <div class="score-bar-fill fill-calidad" style="width: ${m.score_col * 100}%"></div>
+                            </div>
+                            <span style="min-width:38px; text-align:right">${(m.score_col).toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="score-final-wrap">
+                    <div class="star-rating">${starsHtml}</div>
+                    <div class="score-text collab-pred">${m.score_hibrido.toFixed(3)}</div>
+                </div>
+            `;
+            moviesGrid.appendChild(card);
+        }
     }
 });
