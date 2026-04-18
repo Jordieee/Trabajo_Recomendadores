@@ -39,16 +39,79 @@
                         <i class="fa-solid fa-code-merge"></i>
                         <span>Híbrido</span>
                     </button>
+                    <button class="algo-tab" data-algo="grupo" title="SR de Grupos (T6)">
+                        <i class="fa-solid fa-people-group"></i>
+                        <span>Grupos</span>
+                    </button>
                 </div>
                 <small id="algoDescription">Filtra por géneros preferidos del usuario</small>
             </div>
 
-            <!-- User Selector -->
-            <div class="control-group">
+            <!-- User Selector (individual) -->
+            <div class="control-group" id="userSelectorGroup">
                 <label for="userSelect"><i class="fa-solid fa-user"></i> Seleccionar Usuario</label>
                 <div class="select-wrapper">
                     <select id="userSelect" class="modern-input">
                         <option value="">Cargando usuarios...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Group Selector (Trabajo 6) -->
+            <div class="control-group hidden" id="groupSelectorGroup">
+                <label><i class="fa-solid fa-people-group"></i> Miembros del Grupo</label>
+                <div class="group-add-row">
+                    <div class="select-wrapper" style="flex:1">
+                        <select id="groupUserSelect" class="modern-input">
+                            <option value="">Seleccionar usuario...</option>
+                        </select>
+                    </div>
+                    <button id="btnAddMember" class="add-member-btn" title="Añadir al grupo">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <div id="groupMembersList" class="group-members-list"></div>
+                <small id="groupSizeHint" style="color:var(--text-muted)">Máximo 10 usuarios</small>
+            </div>
+
+            <!-- Aggregation Selector (only for Grupos) -->
+            <div class="control-group hidden" id="aggregationGroup">
+                <label for="aggregationSelect"><i class="fa-solid fa-layer-group"></i> Técnica de Agregación</label>
+                <div class="select-wrapper">
+                    <select id="aggregationSelect" class="modern-input">
+                        <optgroup label="Consenso">
+                            <option value="average">Media (Average)</option>
+                            <option value="average_without_misery">Media sin Miseria</option>
+                            <option value="multiplicative">Multiplicativa</option>
+                            <option value="additive_utilitarian">Suma Utilitaria</option>
+                        </optgroup>
+                        <optgroup label="Mayoría">
+                            <option value="borda_count" selected>Borda Count</option>
+                            <option value="plurality_voting">Pluralidad</option>
+                            <option value="approval_voting">Aprobación</option>
+                        </optgroup>
+                        <optgroup label="Borderline">
+                            <option value="least_misery">Least Misery</option>
+                            <option value="most_pleasure">Most Pleasure</option>
+                            <option value="dictatorship">Dictadura</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <!-- Dictator selector (only visible when dictatorship is selected) -->
+                <div class="hidden" id="dictatorRow">
+                    <label for="dictatorSelect" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem">Dictador:</label>
+                    <div class="select-wrapper">
+                        <select id="dictatorSelect" class="modern-input" style="font-size:0.85rem"></select>
+                    </div>
+                </div>
+                <!-- Algo base for group -->
+                <label for="groupAlgoSelect" style="margin-top:0.5rem"><i class="fa-solid fa-sliders"></i> Recomendación base</label>
+                <div class="select-wrapper">
+                    <select id="groupAlgoSelect" class="modern-input">
+                        <option value="hibrido">Híbrido (recomendado)</option>
+                        <option value="contenido">Basado en Contenido</option>
+                        <option value="collab-uu">Colaborativo UU</option>
+                        <option value="collab-ii">Colaborativo II</option>
                     </select>
                 </div>
             </div>
@@ -67,7 +130,7 @@
             </button>
 
             <div class="sidebar-footer">
-                <p>SR Basado en Contenido &amp; Colaborativo<br>Trabajos 3 &amp; 4</p>
+                <p>SR Contenido, Colaborativo, Híbrido &amp; Grupos<br>Trabajos 3 – 6</p>
             </div>
         </aside>
 
@@ -102,6 +165,14 @@
                 <section id="neighborsSection" class="preferences-section glass-panel hidden">
                     <h3 id="neighborsSectionTitle"><i class="fa-solid fa-users"></i> Vecinos más similares</h3>
                     <div id="neighborsContainer" class="neighbors-grid">
+                        <!-- Injected via JS -->
+                    </div>
+                </section>
+
+                <!-- GROUP: Members scores panel -->
+                <section id="groupMembersSection" class="preferences-section glass-panel hidden">
+                    <h3><i class="fa-solid fa-people-group"></i> Puntuaciones por Miembro</h3>
+                    <div id="groupMembersContainer" class="neighbors-grid">
                         <!-- Injected via JS -->
                     </div>
                 </section>

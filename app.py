@@ -17,6 +17,9 @@ from trabajo4_sr_colaborativo import (
     recomendar_usuario_usuario, recomendar_item_item, USERS_CF
 )
 
+# ── Trabajo 6: SR de Grupos ───────────────────────────────────────────────────
+from trabajo6_sr_grupos import recomendar_grupo, AGGREGATION_FUNCTIONS
+
 app = Flask(__name__)
 CORS(app)
 
@@ -123,6 +126,54 @@ def recommend_hibrido(user_id):
         "alpha": resultado.get('alpha', 0.5),
         "beta": resultado.get('beta', 0.5)
     })
+
+# ── Grupos (Trabajo 6) ───────────────────────────────────────────────────────
+
+@app.route('/api/recommend/grupo')
+def recommend_grupo():
+    """SR para Grupos — Trabajo 6."""
+    # user_ids separados por comas, ej: ?user_ids=1,2,3
+    raw_ids = request.args.get('user_ids', '')
+    algorithm = request.args.get('algorithm', 'hibrido')
+    aggregation = request.args.get('aggregation', 'borda_count')
+
+    try:
+        user_ids = [int(u.strip()) for u in raw_ids.split(',') if u.strip()]
+    except ValueError:
+        return jsonify({"error": "user_ids deben ser enteros separados por comas."}), 400
+
+    if not user_ids:
+        return jsonify({"error": "Se necesita al menos un user_id."}), 400
+
+    dictator_id = request.args.get('dictator_id', None)
+    if dictator_id is not None:
+        try:
+            dictator_id = int(dictator_id)
+        except ValueError:
+            dictator_id = None
+
+    resultado = recomendar_grupo(
+        user_ids=user_ids,
+        algorithm=algorithm,
+        aggregation=aggregation,
+        n_recomendaciones=10,
+        dictator_id=dictator_id
+    )
+
+    if 'error' in resultado:
+        return jsonify({"error": resultado['error']}), 404
+
+    return jsonify({
+        "algoritmo": "grupo",
+        **resultado
+    })
+
+
+@app.route('/api/aggregations')
+def get_aggregations():
+    """Devuelve la lista de técnicas de agregación disponibles."""
+    return jsonify(list(AGGREGATION_FUNCTIONS.keys()))
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, threaded=True)

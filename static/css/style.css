@@ -564,6 +564,103 @@ body {
     gap: 1rem;
 }
 
+/* ── GRUPO T6 ── */
+
+/* Group add row */
+.group-add-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.add-member-btn {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);
+}
+
+.add-member-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.55);
+}
+
+/* Member chips list */
+.group-members-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    min-height: 10px;
+}
+
+.member-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    border-radius: 20px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #c4b5fd;
+    animation: fadeIn 0.2s ease;
+}
+
+.chip-remove {
+    background: none;
+    border: none;
+    color: #a78bfa;
+    cursor: pointer;
+    padding: 0 2px;
+    font-size: 0.75rem;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.chip-remove:hover {
+    color: var(--secondary);
+}
+
+/* Grupo pill on movie cards */
+.pill-grupo {
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    color: #d8b4fe;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.5rem;
+}
+
+/* Member scores separator */
+.member-scores-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.07);
+    margin: 0.4rem 0;
+}
+
+/* Group score color */
+.grupo-score {
+    color: #a855f7;
+}
+
 /* RESPONSIVE */
 @media (max-width: 1024px) {
     .app-container {
