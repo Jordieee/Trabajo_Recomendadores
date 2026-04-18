@@ -6,21 +6,23 @@ from trabajo3_sr_contenido import (
 )
 from trabajo4_sr_colaborativo import recomendar_usuario_usuario
 
-def recomendar_hibrido(user_id: int, n_recomendaciones: int = 10):
+def recomendar_hibrido(user_id: int, n_recomendaciones: int = 10, peliculas_vistas_override: set = None):
     """
     Sistema Recomendador Híbrido Ponderado.
     Mezcla las recomendaciones del SR Basado en Contenido y del SR Colaborativo.
     """
     # 1. Obtener todas las recomendaciones posibles de ambos sistemas
     res_cont = recomendar_contenido(
-        user_id, df_pref_norm, df_ratings_valid,
+        user_id, df_pref_norm, 
+        df_ratings_valid if peliculas_vistas_override is None else df_ratings_valid[df_ratings_valid['movieId'].isin(peliculas_vistas_override)],
         pelicula_generos, df_peliculas, V_REF,
         n_top_genres=5, umbral_salto=0.30,
         n_recomendaciones=10000, verbose=False
     )
     
     res_col = recomendar_usuario_usuario(
-        user_id, k_vecinos=40, n_recomendaciones=10000
+        user_id, k_vecinos=40, n_recomendaciones=10000,
+        peliculas_vistas_override=peliculas_vistas_override
     )
     
     # Manejar posibles errores

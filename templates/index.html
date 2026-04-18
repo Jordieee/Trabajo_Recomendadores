@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CineRecomienda — SR Contenido & Colaborativo</title>
+    <title>CineRecomienda — SR Contenido, Colaborativo, Híbrido & Grupos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -42,6 +42,10 @@
                     <button class="algo-tab" data-algo="grupo" title="SR de Grupos (T6)">
                         <i class="fa-solid fa-people-group"></i>
                         <span>Grupos</span>
+                    </button>
+                    <button class="algo-tab" data-algo="metricas" title="Métricas de Calidad (T1)">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Métricas</span>
                     </button>
                 </div>
                 <small id="algoDescription">Filtra por géneros preferidos del usuario</small>
@@ -97,14 +101,14 @@
                         </optgroup>
                     </select>
                 </div>
-                <!-- Dictator selector (only visible when dictatorship is selected) -->
+                
                 <div class="hidden" id="dictatorRow">
                     <label for="dictatorSelect" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem">Dictador:</label>
                     <div class="select-wrapper">
                         <select id="dictatorSelect" class="modern-input" style="font-size:0.85rem"></select>
                     </div>
                 </div>
-                <!-- Algo base for group -->
+
                 <label for="groupAlgoSelect" style="margin-top:0.5rem"><i class="fa-solid fa-sliders"></i> Recomendación base</label>
                 <div class="select-wrapper">
                     <select id="groupAlgoSelect" class="modern-input">
@@ -119,7 +123,7 @@
             <!-- TMDB Key -->
             <div class="control-group">
                 <label for="tmdbKey"><i class="fa-solid fa-key"></i> TMDB API Key (Opcional)</label>
-                <input type="text" id="tmdbKey" class="modern-input" placeholder="Para cargar pósters reales"
+                <input type="text" id="tmdbKey" class="modern-input" placeholder="Para cargar datos reales"
                     title="Si la dejas vacía, se usarán pósters por defecto.">
                 <small>Consigue tu key en <a href="https://www.themoviedb.org/settings/api"
                         target="_blank">themoviedb.org</a></small>
@@ -129,8 +133,15 @@
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Obtener Recomendaciones
             </button>
 
+            <!-- Mejoras T3: Registro Nuevo Usuario -->
+            <div class="registration-area" style="margin-top: auto; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                <button id="btnNewUser" class="nav-btn" style="width: 100%; justify-content: center; background: rgba(108, 92, 231, 0.1); color: var(--accent-light); border: 1px dashed var(--accent-color);">
+                    <i class="fa-solid fa-user-plus"></i> Soy Usuario Nuevo
+                </button>
+            </div>
+
             <div class="sidebar-footer">
-                <p>SR Contenido, Colaborativo, Híbrido &amp; Grupos<br>Trabajos 3 – 6</p>
+                <p>SR Multipropósito (T1-T6)<br>Sistemas Recomendadores</p>
             </div>
         </aside>
 
@@ -152,47 +163,92 @@
 
             <!-- Results State -->
             <div id="resultsState" class="state-container hidden">
-
-                <!-- CONTENT: preferences panel (only for content-based) -->
                 <section id="preferencesSection" class="preferences-section glass-panel hidden">
                     <h3><i class="fa-solid fa-heart"></i> Perfil de Preferencias Top</h3>
-                    <div id="preferencesContainer" class="preferences-grid">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="preferencesContainer" class="preferences-grid"></div>
                 </section>
 
-                <!-- COLLAB: Neighbors / Similar-users panel -->
                 <section id="neighborsSection" class="preferences-section glass-panel hidden">
                     <h3 id="neighborsSectionTitle"><i class="fa-solid fa-users"></i> Vecinos más similares</h3>
-                    <div id="neighborsContainer" class="neighbors-grid">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="neighborsContainer" class="neighbors-grid"></div>
                 </section>
 
-                <!-- GROUP: Members scores panel -->
                 <section id="groupMembersSection" class="preferences-section glass-panel hidden">
                     <h3><i class="fa-solid fa-people-group"></i> Puntuaciones por Miembro</h3>
-                    <div id="groupMembersContainer" class="neighbors-grid">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="groupMembersContainer" class="neighbors-grid"></div>
                 </section>
 
-                <!-- Recommendations Grid -->
                 <section class="recommendations-section">
                     <div class="section-header">
                         <h3><i class="fa-solid fa-trophy"></i> Top 10 Recomendaciones</h3>
-                        <div id="formulaBadge" class="formula-badge" title="">r(u,i) = αA + βC + γF</div>
+                        <div id="formulaBadge" class="formula-badge">r(u,i) = αA + βC + γF</div>
                     </div>
-                    <div id="moviesGrid" class="movies-grid">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="moviesGrid" class="movies-grid"></div>
                 </section>
+            </div>
 
+            <!-- Metrics State -->
+            <div id="metricsState" class="state-container hidden">
+                <section class="preferences-section glass-panel">
+                    <header class="section-header" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div class="header-text">
+                            <h3 style="margin:0"><i class="fa-solid fa-chart-line"></i> Análisis de Calidad</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">Cálculo sobre set de test 80/20.</p>
+                        </div>
+                        <button id="btnRecalculateMetrics" class="algo-tab" style="padding: 0.5rem 1rem; height: auto;">
+                            <i class="fa-solid fa-arrows-rotate"></i> Recalcular
+                        </button>
+                    </header>
+                    <div id="metricsLoading" class="hidden" style="text-align:center; padding: 2rem;">
+                        <div class="loader"></div>
+                        <p>Evaluando modelos...</p>
+                    </div>
+                    <div id="metricsContent" class="metrics-grid"></div>
+                </section>
             </div>
         </main>
     </div>
 
+    <!-- MODAL FICHA PELÍCULA -->
+    <div id="movieModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content movie-card-expanded glass-panel">
+            <span class="modal-close">&times;</span>
+            <div class="modal-body">
+                <div class="movie-poster-large">
+                    <img id="modalPoster" src="" alt="Poster">
+                </div>
+                <div class="movie-info-expanded">
+                    <h2 id="modalTitle">Título</h2>
+                    <div id="modalMeta" class="movie-meta">
+                        <span id="modalYear"></span>
+                        <span id="modalRuntime"></span>
+                    </div>
+                    <p id="modalOverview" class="overview">Cargando sinopsis...</p>
+                    <div class="cast-section">
+                        <h3>Reparto Principal</h3>
+                        <p id="modalCast">-</p>
+                    </div>
+                    <div id="modalGenres" class="tag-container" style="margin-top:1.5rem"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL USUARIO NUEVO -->
+    <div id="newUserModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content glass-panel" style="max-width:500px">
+            <div class="modal-header" style="text-align:center; margin-bottom:1.5rem;">
+                <h2>¿Eres nuevo por aquí?</h2>
+                <p>Configura tus gustos para recibir recomendaciones personalizadas.</p>
+            </div>
+            <div id="newUserGenres" class="genre-registration-form" style="max-height:450px; overflow-y:auto; padding:0 1rem;"></div>
+            <div class="modal-footer" style="display:flex; gap:1rem; margin-top:2rem;">
+                <button class="modal-cancel algo-tab" style="flex:1; height: auto; padding: 0.8rem;">Cancelar</button>
+                <button id="btnSubmitNewUser" class="algo-tab active" style="flex:1; height: auto; padding: 0.8rem;">Guardar y Recomendar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
-
 </html>

@@ -151,11 +151,15 @@ def filtrar_preferencias(user_id: int,
     -------
     pd.Series con los géneros seleccionados y sus valores de preferencia.
     """
-    if user_id not in df_pref.index:
-        raise ValueError(f"Usuario {user_id} no encontrado en la matriz.")
-
-    # Copiar y eliminar NaN (géneros no vistos → no se usan para recomendar)
-    prefs = df_pref.loc[user_id].dropna().copy()
+    if user_id is not None:
+        if user_id not in df_pref.index:
+            raise ValueError(f"Usuario {user_id} no encontrado en la matriz.")
+        # Copiar y eliminar NaN (géneros no vistos → no se usan para recomendar)
+        prefs = df_pref.loc[user_id].dropna().copy()
+    elif df_pref is not None and isinstance(df_pref, pd.Series):
+        prefs = df_pref.dropna().copy()
+    else:
+        raise ValueError("Se debe proporcionar user_id o un vector de preferencias pd.Series.")
 
     if len(prefs) == 0:
         return pd.Series(dtype=float)  # Usuario sin historial
@@ -416,7 +420,7 @@ def recomendar_contenido(user_id: int,
 
     Retorna DataFrame con las películas recomendadas y desglose de scores.
     """
-    if user_id not in df_pref.index:
+    if user_id is not None and user_id not in df_pref.index:
         print(f"⚠️ Usuario {user_id} sin datos de preferencia.")
         return pd.DataFrame()
 

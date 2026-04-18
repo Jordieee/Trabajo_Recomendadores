@@ -1,0 +1,18 @@
+{
+    "contenido": {
+        "precision": 0.005,
+        "mae": 0.0,
+        "desc": "Basado en atributos de películas (géneros). Buena precisión pero limitada por el historial del usuario."
+    },
+    "collab_uu": {
+        "precision": 0.005,
+        "mae": 1.113,
+        "desc": "Basado en sabiduría social. El MAE indica qué tan cerca estamos del voto real del usuario."
+    },
+    "hibrido": {
+        "precision": 0.01,
+        "mae": 0.5757,
+        "desc": "Combina lo mejor de ambos mundos. Generalmente ofrece la mayor estabilidad y precisión."
+    },
+    "timestamp": "2026-04-18 19:04:54"
+}

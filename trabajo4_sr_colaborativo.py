@@ -104,7 +104,8 @@ def recomendar_usuario_usuario(user_id: int,
                                 k_vecinos: int = 40,
                                 n_recomendaciones: int = 10,
                                 sim_minima: float = 0.1,
-                                min_rating_favorable: float = 3.0) -> dict:
+                                min_rating_favorable: float = 3.0,
+                                peliculas_vistas_override: set = None) -> dict:
     """
     Recomienda películas usando filtrado colaborativo Usuario-Usuario basado en PREFERENCIAS.
     
@@ -153,8 +154,11 @@ def recomendar_usuario_usuario(user_id: int,
     vecinos_ids = list(sim_dict.keys())
 
     # Historial del usuario
-    u_ratings = rating_matrix.loc[user_id] if user_id in rating_matrix.index else pd.Series(dtype=float)
-    peliculas_vistas = set(u_ratings.dropna().index)
+    if peliculas_vistas_override is not None:
+        peliculas_vistas = peliculas_vistas_override
+    else:
+        u_ratings = rating_matrix.loc[user_id] if user_id in rating_matrix.index else pd.Series(dtype=float)
+        peliculas_vistas = set(u_ratings.dropna().index)
 
     # Buscar ítems puntuados por los vecinos ("favorables")
     vecinos_ratings = rating_matrix.loc[vecinos_ids] if len(vecinos_ids) > 0 else pd.DataFrame()
@@ -216,7 +220,8 @@ def recomendar_usuario_usuario(user_id: int,
 def recomendar_item_item(user_id: int,
                           k_similares: int = 20,
                           n_recomendaciones: int = 10,
-                          sim_minima: float = 0.1) -> dict:
+                          sim_minima: float = 0.1,
+                          peliculas_vistas_override: set = None) -> dict:
     """
     Recomienda películas usando filtrado colaborativo Ítem-Ítem.
     Usa la matriz de similitud pre-computada en startup → consultas en ~ms.
@@ -229,9 +234,13 @@ def recomendar_item_item(user_id: int,
 
     u_ratings = rating_matrix.loc[user_id]
 
-    # Películas vistas en el catálogo filtrado (películas con posición conocida)
-    vistas_en_catálogo = {mid: float(u_ratings[mid]) for mid in u_ratings.index
-                          if mid in movie_id_to_pos and not np.isnan(float(u_ratings[mid]))}
+    # Películas vistas
+    if peliculas_vistas_override is not None:
+        vistas_en_catálogo = {mid: float(u_ratings[mid]) if mid in u_ratings.index else 0.0 
+                              for mid in peliculas_vistas_override if mid in movie_id_to_pos}
+    else:
+        vistas_en_catálogo = {mid: float(u_ratings[mid]) for mid in u_ratings.index
+                              if mid in movie_id_to_pos and not np.isnan(float(u_ratings[mid]))}
 
     if not vistas_en_catálogo:
         return {'error': 'El usuario no tiene películas vistas en el catálogo filtrado.'}
