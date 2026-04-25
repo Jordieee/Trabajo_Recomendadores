@@ -170,6 +170,10 @@ body {
     display: none;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .hero-text {
     margin: auto;
     text-align: center;
@@ -473,6 +477,7 @@ body {
 /* ALGORITHM TABS */
 .algo-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.4rem;
     background: rgba(0, 0, 0, 0.2);
     padding: 0.4rem;

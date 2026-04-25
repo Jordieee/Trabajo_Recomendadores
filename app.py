@@ -31,7 +31,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Configuración por defecto
-TMDB_KEY_DEFAULT = "YOUR_TMDB_API_KEY" # Placeholder - reemplaza con una válida si tienes
+TMDB_KEY_DEFAULT = "f864d8898eea3f8c332fccc6faf0e61c"
 BASE_TMDB_URL = "https://api.themoviedb.org/3"
 
 # Unión de usuarios disponibles en ambos módulos
@@ -218,34 +218,68 @@ def recommend_new_user():
     if not data:
         return jsonify({"error": "No se enviaron preferencias"}), 400
     
-    # Crear Series de pandas con las preferencias enviadas (0-10)
-    # y normalizarlas a [0, 1]
-    pref_series = pd.Series(data) / 10.0
+    import pandas as pd
+    from trabajo3_sr_contenido import obtener_candidatas, calcular_score, df_peliculas, V_REF, df_ratings_valid, pelicula_generos
     
-    result = recomendar_contenido(
-        None, # userId es None
-        pref_series, # Pasamos la serie directamente como 'df_pref'
-        df_ratings_valid,
-        pelicula_generos, df_peliculas, V_REF,
-        n_top_genres=5, umbral_salto=0.30,
-        n_recomendaciones=10, verbose=False
-    )
-
-    if isinstance(result, tuple):
-        df_top, _ = result
-    else:
-        df_top = pd.DataFrame()
-
-    if df_top.empty:
+    # Crear Series de pandas con las preferencias enviadas (0-10) y pasarlo a escala 0-100
+    pref_series = pd.Series(data, dtype=float) * 10.0
+    pref_series = pref_series[pref_series > 0].sort_values(ascending=False)
+    
+    if pref_series.empty:
+        return jsonify({"error": "Debes valorar al menos un género por encima de 0 para poder recomendarte algo."}), 400
+        
+    # Usamos ID ficticio (-1) para no descartar pelis por "historial", y usamos obtener_candidatas directamente
+    candidatas = obtener_candidatas(-1, pref_series, df_ratings_valid, pelicula_generos)
+    
+    resultados = []
+    for mid, coincidentes in candidatas:
+        res = calcular_score(mid, coincidentes, pref_series, df_peliculas, V_REF)
+        if res is not None:
+            resultados.append(res)
+            
+    if not resultados:
         return jsonify({"error": "No se encontraron recomendaciones para este perfil"}), 404
+
+    df_res = pd.DataFrame(resultados)
+    df_top = df_res.nlargest(10, 'score_final').reset_index(drop=True)
 
     return jsonify({
         "algoritmo": "nuevo-usuario",
-        "recomendaciones": df_top.to_dict(orient='records')
+        "recomendaciones": df_top.to_dict(orient='records'),
+        "perfil_filtrado": {str(k): float(v) for k, v in pref_series.items()}
     })
 
 
-# ── Mejoras: Detalles de Película ───────────────────────────────────────────
+# ── Mejoras: Detalles y Pósters de Película ────────────────────────────────
+
+@app.route('/api/poster/<int:movie_id>')
+def get_poster(movie_id):
+    """Devuelve la carátula de la película si existe localmente."""
+    import glob, os
+    from flask import send_file
+    from trabajo3_sr_contenido import df_peliculas
+    
+    row = df_peliculas[df_peliculas['id'] == movie_id]
+    if row.empty:
+        return jsonify({"error": "Pelicula no encontrada"}), 404
+        
+    imdb_str = str(row.iloc[0]['imdb_id']) # e.g. "tt0113101" o "113101"
+    # Extraer solo la parte numérica (quitando el 'tt' y los ceros a la izquierda que maneja int())
+    try:
+        imdb_numeric = int(''.join(filter(str.isdigit, imdb_str)))
+    except ValueError:
+        return jsonify({"error": "IMDB ID inválido"}), 400
+
+    # Buscar cualquier archivo que termine en _{imdb_numeric}.jpg
+    # en la carpeta Data_set/Car_tulas/archive/poster_downloads
+    pattern = os.path.join("Data_set", "Car_tulas", "archive", "poster_downloads", f"*_{imdb_numeric}.jpg")
+    matches = glob.glob(pattern)
+    
+    if matches:
+        return send_file(matches[0], mimetype='image/jpeg')
+    else:
+        return jsonify({"error": "Póster no encontrado"}), 404
+
 
 @app.route('/api/movie/<int:movie_id>')
 def get_movie_details(movie_id):

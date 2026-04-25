@@ -349,9 +349,37 @@ document.addEventListener('DOMContentLoaded', () => {
         modalYear.innerText = '';
         modalRuntime.innerText = '';
         
-        // Poster temporal
+        // Poster (directo de TMDB si hay key, si no placeholder)
         const cleanTitle = title.replace(/\s*\(\d{4}\)\s*$/, '');
-        modalPoster.src = `https://via.placeholder.com/300x450/1e293b/94a3b8?text=${encodeURIComponent(cleanTitle)}`;
+        const fallbackUrl = `https://via.placeholder.com/300x450/1e293b/94a3b8?text=${encodeURIComponent(cleanTitle)}`;
+        const apiKey = tmdbKeyInput.value.trim();
+
+        if (apiKey) {
+            // Intentamos por ID directamente primero
+            fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${apiKey}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.poster_path) {
+                        modalPoster.src = `https://image.tmdb.org/t/p/w500${d.poster_path}`;
+                    } else {
+                        throw new Error("No poster path");
+                    }
+                })
+                .catch(() => {
+                    // Fallback a búsqueda por título
+                    fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}`)
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.results?.[0]?.poster_path) {
+                                modalPoster.src = `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}`;
+                            } else {
+                                modalPoster.src = fallbackUrl;
+                            }
+                        }).catch(() => { modalPoster.src = fallbackUrl; });
+                });
+        } else {
+            modalPoster.src = fallbackUrl;
+        }
 
         try {
             const res = await fetch(`/api/movie/${movieId}?api_key=${tmdbKeyInput.value.trim()}`);
@@ -364,15 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modalYear.innerText = data.release_date ? data.release_date.split('-')[0] : '';
             modalRuntime.innerText = data.runtime ? `${data.runtime} min` : '';
             modalGenres.innerHTML = data.genres.map(g => `<span class="explain-tag">${g}</span>`).join('');
-            
-            // Intentar buscar poster real si no lo tenemos ya
-            if (tmdbKeyInput.value.trim()) {
-                const searchRes = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${tmdbKeyInput.value.trim()}&query=${encodeURIComponent(cleanTitle)}`);
-                const searchData = await searchRes.json();
-                if (searchData.results?.[0]?.poster_path) {
-                    modalPoster.src = `https://image.tmdb.org/t/p/w500${searchData.results[0].poster_path}`;
-                }
-            }
+
         } catch (e) {
             modalOverview.innerText = "No se pudo cargar la información detallada.";
         }
@@ -436,13 +456,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Simplified card population for all modes
     async function populateCardContent(card, m, rank, type, apiKey) {
         const cleanTitle = m.titulo.replace(/\s*\(\d{4}\)\s*$/, '');
-        let posterUrl = `https://via.placeholder.com/300x450/1e293b/94a3b8?text=${encodeURIComponent(cleanTitle)}`;
+        const fallbackUrl = `https://via.placeholder.com/300x450/1e293b/94a3b8?text=${encodeURIComponent(cleanTitle)}`;
         
         // Basic card structure
         card.innerHTML = `
             <div class="rank-badge">#${rank}</div>
             <div class="movie-poster-container">
-                <img class="movie-poster" src="${posterUrl}" alt="Póster" loading="lazy">
+                <img class="movie-poster" src="${fallbackUrl}" alt="Póster" loading="lazy">
             </div>
             <div class="movie-info">
                 <h4 class="movie-title">${m.titulo}</h4>
@@ -451,14 +471,26 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="score-final-wrap" id="final-${rank}"></div>
         `;
         
-        // Fetch poster async if key exists
         if (apiKey) {
-            fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}`)
+            const img = card.querySelector('img');
+            // Primero intentamos fetch directo por ID de TMDB
+            fetch(`https://api.themoviedb.org/3/movie/${m.movieId}?api_key=${apiKey}`)
                 .then(r => r.json())
                 .then(d => {
-                    if (d.results?.[0]?.poster_path) 
-                        card.querySelector('img').src = `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}`;
-                }).catch(()=>{});
+                    if (d.poster_path) {
+                        img.src = `https://image.tmdb.org/t/p/w500${d.poster_path}`;
+                    } else {
+                        // Si no hay poster_path, intentamos búsqueda por título
+                        return fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}`);
+                    }
+                })
+                .then(r => r ? r.json() : null)
+                .then(d => {
+                    if (d && d.results?.[0]?.poster_path) {
+                        img.src = `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}`;
+                    }
+                })
+                .catch(()=>{});
         }
         
         const details = card.querySelector(`#details-${rank}`);
