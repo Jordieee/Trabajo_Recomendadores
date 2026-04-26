@@ -251,15 +251,8 @@ def aggregate_dictatorship(pivot: pd.DataFrame, user_ids: List[int], dictator_id
 
 AGGREGATION_FUNCTIONS = {
     'average': aggregate_average,
-    'average_without_misery': aggregate_average_without_misery,
-    'multiplicative': aggregate_multiplicative,
-    'additive_utilitarian': aggregate_additive_utilitarian,
     'least_misery': aggregate_least_misery,
-    'most_pleasure': aggregate_most_pleasure,
     'borda_count': aggregate_borda_count,
-    'plurality_voting': aggregate_plurality_voting,
-    'approval_voting': aggregate_approval_voting,
-    'dictatorship': aggregate_dictatorship,
 }
 
 

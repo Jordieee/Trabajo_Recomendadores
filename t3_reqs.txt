@@ -1,0 +1,270 @@
+Trabajo 3
+SR basado en contenido
+SR
+Sistemas Recomendadores
+
+Recomienda películas que satisfacen los gustos del usuario
+Clasificadas en los géneros que más le gustan
+Sus gustos los define las preferencias de su perfil
+Se buscan ítems clasificados en las categorías que coinciden 
+con las preferencias del usuario mejor puntuadas
+SR Basado en Contenido
+2
+3
+
+Las preferencias se encuentran en el 
+perfil de usuario
+En el punto de solicitar la 
+recomendación, todos los usuarios 
+tienen preferencias
+Preferencias
+4
+Identificador de usuario
+Modelo de preferencias 
+del usuario
+Preferencias
+Histórico de interacción 
+del usuario con el sistema 
+Información interna del 
+SR
+
+Usuario nuevo 
+en el sistema
+Preferencias leídas
+Usuario del 
+dataset
+Preferencias 
+obtenidas de las 
+películas puntuadas 
+por el usuario
+5
+Preferencias
+Es posible que el 
+vector de 
+preferencias 
+tenga la mayor 
+parte del vector 
+relleno
+No es una buena 
+situación para 
+obtener la 
+recomendación 
+basada en 
+contenido
+Seleccionar del 
+vector de 
+preferencias, las 
+5-8 de mayor 
+ratio
+NO BORRAR LAS 
+PREFERENCIAS 
+DEL VECTOR, 
+PUES LUEGO SE 
+USARÁN. CREAR 
+UN NUEVO 
+VECTOR
+6
+0 90 10 90 7 85 0 77 86
+0 1 2 3 4 5 6 7 … 19Preferencias del 
+perfil
+0 90 0 90 0 85 0 77 86
+0 1 2 3 4 5 6 7 … 19
+Nuevo vector
+Selección de preferencias
+Seleccionar del vector 
+de preferencias, las 5 -8 
+de mayor ratio
+Si entre las 5 -8 hay 
+preferencias con valores 
+bajos, no considerarlas
+•Ejemplo:
+•Si las de mayor ratio 
+tienen 90 -80-75-10-3
+•Usar solo 90 -80-75
+7
+Selección de preferencias
+Selección de preferencias
+8
+Las preferencias que se usarán para obtener 
+la recomendación basada en contenido 
+serán un subconjunto de las preferencias 
+del perfil
+0 90 10 90 7 85 0 77 86
+0 1 2 3 4 5 6 7 … 19Preferencias del 
+perfil
+0 90 0 90 0 85 0 77 86
+0 1 2 3 4 5 6 7 … 19
+Nuevo vector
+9
+
+1•Dado el nuevo vector de preferencias, obtener la lista de ítems clasificados en las preferencias 
+que aparecen en el vector
+2 •Eliminar los ítems ya vistos por el usuario
+3•Obtener el ratio de interés del usuario en cada uno de esos ítems
+4•Ordenar la lista por ratio
+5•Mostrar en la interfaz los N ítems de mayor ratio
+Proceso
+10
+Las preferencias 
+contienen
+Ciencia 
+ficción 80
+Thriller 50
+Los ítems que 
+satisfacen las 
+preferencias son
+Origen
+Minority
+report
+Se calcula el ratio 
+de interés del 
+usuario en cada 
+ítem y se obtiene
+Origen: 85
+Minority
+report : 93
+Se ordena la lista 
+por ratio
+Minority
+report : 93
+Origen: 85
+Se muestran los 
+ítems en la 
+interfaz
+Ejemplo
+12
+Dado el vector de preferencias (vector filtrado)
+Se obtiene una lista de ítems recomendados 
+(películas) al usuario
+Obtener los ítems que satisfacen las preferencias 
+(todos los ítems que están clasificados en alguna 
+de las preferencias)
+Paso 1. Obtener los ítems clasificados en las 
+preferencias
+13
+Eliminar de la lista las 
+películas que están el en 
+histórico del usuario (el 
+histórico proviene del 
+fichero de 
+entrenamiento)
+Cuando un usuario es 
+nuevo en el sistema, no 
+tiene histórico
+Paso 2. Eliminar los ítems ya vistos
+14
+El ratio de 
+interés del 
+usuario en el 
+ítem se calcula 
+en función deRatio de las preferencias 
+del usuario que 
+coinciden con las que 
+está clasificado el ítem
+Número de preferencias 
+por las que está 
+clasificado el ítem
+Puntuación media que 
+los usuarios han dado a 
+la película
+Número de usuarios que 
+han puntuado la película
+Esta función la 
+definís 
+vosotros
+Paso 3. Obtener el ratio de interés del usuario en 
+cada uno de los ítems de la lista
+15
+Para calcular el ratio predicho de un ítem, no hay 
+una fórmula
+Ajustar la fórmula según lo que vosotros 
+consideréis que se debería obtener
+Explicar la forma en la que se calcula el ratio 
+en la presentación y la memoria del trabajo
+Paso 3. Obtener el ratio de interés del usuario en 
+cada uno de los ítems de la lista
+16
+Ítem i: Forrest Gump
+•Puntuación media 8.2
+•Votos 8147
+•Clasificación
+•6 Comedia 
+•3 Drama
+•15 Romance
+Usuario u
+•ru_p6=90
+•ru_p3=100
+•ru_pP15=0
+Ejemplo: Calcular el ratio de interés del usuario u 
+en el ítem i
+17𝑟_𝑢𝑖=𝑓(𝑟𝑢𝑝6,𝑟𝑢𝑝3,𝑝𝑢𝑛𝑡𝑢𝑎𝑐𝑖ó 𝑛𝑚𝑒𝑑𝑖𝑎,𝑣𝑜𝑡𝑜𝑠)
+id Genero
+0 Adventure
+1 Fantasy
+2 Animation
+3 Drama
+4 Horror
+5 Action
+6 Comedy
+7 History
+8 Western
+9 Thriller
+10 Crime
+11 Documentary
+12 Science Fiction
+13 Mystery
+14 Music
+15 Romance
+16 Family
+17 War
+18 Foreign
+19 TV Movie
+La función utilizada debe tener en cuenta
+Número de 
+preferencias 
+coincidentes 
+entre el usuario 
+y el ítemPara cada 
+preferencia 
+coincidente:
+•Ratio de la 
+preferencia para el 
+usuarioPuntuación 
+media de los 
+usuarios a la 
+películaNúmero de 
+votos
+•La fiabilidad de la 
+puntuación media 
+es diferente si el 
+número de votos 
+es alto o bajo
+Ejemplo: Calcular el ratio de interés del usuario u 
+en el ítem i
+18
+Ordenar los ítems por ratio 
+calculado
+•De mayor a menor
+Paso 4. Ordenar los ítems por ratio
+19
+Seleccionar los ítems a 
+mostrar en la interfaz
+•Los N ítems de mayor ratio
+•Seleccionar los ítems de ratio 
+mayor que un valor dado
+•¿Pocos ítems?
+•¿Muchos ítems?
+Mostrarlos en la interfaz 
+con la información que se 
+considere apropiada
+•Se pueden mostrar estrellas 
+que indiquen el valor del ratio
+•Carátulas
+•Información sobre la película: 
+etiquetas, información de 
+imdb,…
+•Explicación de la 
+recomendación
+Paso 5. Mostrar los ítems recomendados en la 
+interfaz
+20

@@ -31,8 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const groupMembersList    = document.getElementById('groupMembersList');
     const aggregationSelect   = document.getElementById('aggregationSelect');
     const groupAlgoSelect     = document.getElementById('groupAlgoSelect');
-    const dictatorRow         = document.getElementById('dictatorRow');
-    const dictatorSelect      = document.getElementById('dictatorSelect');
 
     // ── Metrics UI refs
     const metricsContent      = document.getElementById('metricsContent');
@@ -76,13 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
             badgeTitle: 'User-User: promedio ponderado por similitud Pearson',
             loading: 'Buscando vecinos similares y prediciendo ratings...',
             apiUrl: (uid) => `/api/recommend/collab-uu/${uid}`,
-        },
-        'collab-ii': {
-            desc: 'Películas similares a las que ya valoraste (Pearson)',
-            badge: 'Similitud de ítems',
-            badgeTitle: 'Item-Item: similitud Pearson entre ítems',
-            loading: 'Calculando similitudes entre películas...',
-            apiUrl: (uid) => `/api/recommend/collab-ii/${uid}`,
         },
         'hibrido': {
             desc: 'Ponderación de Contenido y Colaborativo (T5)',
@@ -267,7 +258,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showPanel(loadingState);
         loadingText.innerText = 'Creando tu perfil y buscando películas...';
 
-        fetch('/api/recommend/new-user', {
+        const algo = document.getElementById('newUserAlgoSelect').value;
+
+        fetch(`/api/recommend/new-user?algorithm=${algo}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(prefs)
@@ -295,9 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentAlgo === 'grupo') {
             const uids = groupMembers.map(m => m.id).join(',');
             const agg = aggregationSelect.value;
-            const dictator = dictatorSelect.value;
             const base = groupAlgoSelect.value;
-            url = `/api/recommend/grupo?user_ids=${uids}&algorithm=${base}&aggregation=${agg}&dictator=${dictator}`;
+            url = `/api/recommend/grupo?user_ids=${uids}&algorithm=${base}&aggregation=${agg}`;
         }
 
         fetch(url)
@@ -318,21 +310,25 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide all secondary panels
         [preferencesSection, neighborsSection, groupMembersSection].forEach(s => s.classList.add('hidden'));
 
-        if (currentAlgo === 'contenido' || data.algoritmo === 'nuevo-usuario') {
-            preferencesSection.classList.remove('hidden');
-            renderPreferences(data.perfil_filtrado);
+        const algo = data.algoritmo || currentAlgo;
+
+        if (algo === 'contenido' || algo === 'nuevo-usuario') {
+            if (data.perfil_filtrado) {
+                preferencesSection.classList.remove('hidden');
+                renderPreferences(data.perfil_filtrado);
+            }
             renderMoviesContent(data.recomendaciones);
-        } else if (currentAlgo === 'collab-uu' || currentAlgo === 'collab-ii') {
+        } else if (algo === 'collab-uu' || algo === 'collab-ii') {
             neighborsSection.classList.remove('hidden');
-            const mode = currentAlgo === 'collab-uu' ? 'uu' : 'ii';
+            const mode = algo === 'collab-uu' ? 'uu' : 'ii';
             neighborsSectionTitle.innerHTML = mode === 'uu' 
                 ? '<i class="fa-solid fa-users"></i> Vecinos más similares'
                 : '<i class="fa-solid fa-film"></i> Películas semilla';
             renderNeighbors(data.vecinos || data.items_base, mode);
             renderMoviesCollab(data.recomendaciones, mode);
-        } else if (currentAlgo === 'hibrido') {
+        } else if (algo === 'hibrido') {
             renderMoviesHibrido(data.recomendaciones);
-        } else if (currentAlgo === 'grupo') {
+        } else if (algo === 'grupo') {
             groupMembersSection.classList.remove('hidden');
             renderGroupMembersPanel(groupMembers, data.recomendaciones);
             renderMoviesGrupo(data.recomendaciones, groupMembers);
@@ -510,6 +506,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (type === 'hibrido') {
              final.innerHTML = `<div class="star-rating">${getStarsHTML(m.score_hibrido*5)}</div><div class="score-text">${m.score_hibrido.toFixed(3)}</div>`;
         } else if (type === 'grupo') {
+             let indHtml = '';
+             if (m.individual_scores) {
+                 indHtml = Object.entries(m.individual_scores).map(([uid, score]) => {
+                     let stars = score !== null ? getStarsHTML(score * 5) : getStarsHTML(0);
+                     return `<div class="score-row" style="margin-bottom:0.2rem; font-size:0.8rem; justify-content:space-between;"><span>U${uid}</span><div class="star-rating" style="font-size:0.7rem; color:var(--accent-light);">${stars}</div></div>`;
+                 }).join('');
+             }
+             details.innerHTML = indHtml;
              final.innerHTML = `<div class="star-rating">${getStarsHTML(m.group_score*5)}</div><div class="score-text">${m.group_score.toFixed(3)}</div>`;
         }
     }
@@ -582,9 +586,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button onclick="removeGroupMember(${m.id})">&times;</button>
             </div>
         `).join('');
-        
-        // Update dictator select
-        dictatorSelect.innerHTML = groupMembers.map(m => `<option value="${m.id}">Usuario ${m.id}</option>`).join('');
     }
 
     window.removeGroupMember = (id) => {
@@ -592,9 +593,5 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGroupMembers();
         validateInputs();
     };
-
-    aggregationSelect.addEventListener('change', () => {
-        dictatorRow.classList.toggle('hidden', aggregationSelect.value !== 'dictatorship');
-    });
 
 });

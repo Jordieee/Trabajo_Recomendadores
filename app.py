@@ -108,20 +108,7 @@ def recommend_collab_uu(user_id):
     })
 
 
-# ── Colaborativo Ítem-Ítem (Trabajo 4) ───────────────────────────────────────
 
-@app.route('/api/recommend/collab-ii/<int:user_id>')
-def recommend_collab_ii(user_id):
-    """SR Colaborativo Ítem-Ítem — Trabajo 4."""
-    resultado = recomendar_item_item(user_id, k_similares=20, n_recomendaciones=10)
-
-    if 'error' in resultado:
-        return jsonify({"error": resultado['error']}), 404
-
-    return jsonify({
-        "algoritmo": "collab-ii",
-        "recomendaciones": resultado['recomendaciones'],
-    })
 
 
 # ── Híbrido (Trabajo 5) ───────────────────────────────────────────────────────
@@ -213,41 +200,173 @@ def get_metrics():
 
 @app.route('/api/recommend/new-user', methods=['POST'])
 def recommend_new_user():
-    """SR basado en contenido para un perfil de preferencias externo."""
+    """SR para un perfil de preferencias externo (Usuario Nuevo)."""
+    algorithm = request.args.get('algorithm', 'contenido')
     data = request.json
     if not data:
         return jsonify({"error": "No se enviaron preferencias"}), 400
     
     import pandas as pd
+    import numpy as np
     from trabajo3_sr_contenido import obtener_candidatas, calcular_score, df_peliculas, V_REF, df_ratings_valid, pelicula_generos
+    from trabajo4_sr_colaborativo import df_pref_union, rating_matrix
     
-    # Crear Series de pandas con las preferencias enviadas (0-10) y pasarlo a escala 0-100
-    pref_series = pd.Series(data, dtype=float) * 10.0
-    pref_series = pref_series[pref_series > 0].sort_values(ascending=False)
+    pref_series_raw = pd.Series(data, dtype=float)
     
-    if pref_series.empty:
-        return jsonify({"error": "Debes valorar al menos un género por encima de 0 para poder recomendarte algo."}), 400
-        
-    # Usamos ID ficticio (-1) para no descartar pelis por "historial", y usamos obtener_candidatas directamente
-    candidatas = obtener_candidatas(-1, pref_series, df_ratings_valid, pelicula_generos)
-    
-    resultados = []
-    for mid, coincidentes in candidatas:
-        res = calcular_score(mid, coincidentes, pref_series, df_peliculas, V_REF)
-        if res is not None:
-            resultados.append(res)
+    if algorithm == 'contenido':
+        pref_series = pref_series_raw * 10.0
+        pref_series = pref_series[pref_series > 0].sort_values(ascending=False)
+        if pref_series.empty:
+            return jsonify({"error": "Debes valorar al menos un género por encima de 0."}), 400
             
-    if not resultados:
-        return jsonify({"error": "No se encontraron recomendaciones para este perfil"}), 404
+        candidatas = obtener_candidatas(-1, pref_series, df_ratings_valid, pelicula_generos)
+        resultados = []
+        for mid, coincidentes in candidatas:
+            res = calcular_score(mid, coincidentes, pref_series, df_peliculas, V_REF)
+            if res is not None:
+                resultados.append(res)
+                
+        if not resultados:
+            return jsonify({"error": "No se encontraron recomendaciones."}), 404
 
-    df_res = pd.DataFrame(resultados)
-    df_top = df_res.nlargest(10, 'score_final').reset_index(drop=True)
+        df_res = pd.DataFrame(resultados)
+        df_top = df_res.nlargest(10, 'score_final').reset_index(drop=True)
+        return jsonify({
+            "algoritmo": "contenido",
+            "recomendaciones": df_top.to_dict(orient='records'),
+            "perfil_filtrado": {str(k): float(v) for k, v in pref_series.items()}
+        })
+        
+    elif algorithm == 'collab-uu':
+        pref_0_1 = pref_series_raw / 10.0
+        user_vector = pd.Series(0.0, index=df_pref_union.columns)
+        for g, v in pref_0_1.items():
+            if g in user_vector.index:
+                user_vector[g] = v
+                
+        u_centered = user_vector.values - user_vector.values.mean()
+        u_norm = np.linalg.norm(u_centered)
+        if u_norm == 0:
+            return jsonify({"error": "Preferencias insuficientes para buscar vecinos."}), 400
+            
+        ratings_users = set(rating_matrix.index)
+        df_pref_filtered = df_pref_union[df_pref_union.index.isin(ratings_users)]
+        prefs_np = df_pref_filtered.values
+        means = prefs_np.mean(axis=1, keepdims=True)
+        centered = prefs_np - means
+        norms = np.linalg.norm(centered, axis=1)
+        
+        similitudes = {}
+        for i, other_id in enumerate(df_pref_filtered.index):
+            if norms[i] == 0: continue
+            sim = np.dot(u_centered, centered[i]) / (u_norm * norms[i])
+            if not np.isnan(sim) and sim >= 0.1:
+                similitudes[other_id] = float(sim)
+                
+        if not similitudes:
+            return jsonify({"error": "No se encontraron vecinos similares."}), 404
+            
+        vecinos_top = dict(sorted(similitudes.items(), key=lambda item: item[1], reverse=True)[:40])
+        predicciones = {}
+        for vec_id, sim in vecinos_top.items():
+            vec_ratings = rating_matrix.loc[vec_id].dropna()
+            for movie_id, r in vec_ratings.items():
+                if r < 3.0: continue
+                if movie_id not in predicciones:
+                    predicciones[movie_id] = {'sum_sim_r': 0, 'sum_sim': 0}
+                predicciones[movie_id]['sum_sim_r'] += sim * r
+                predicciones[movie_id]['sum_sim'] += sim
+                
+        resultados = []
+        for mid, stats in predicciones.items():
+            row = df_peliculas[df_peliculas['id'] == mid]
+            if not row.empty:
+                resultados.append({
+                    'movieId': int(mid),
+                    'titulo': row.iloc[0]['titulo'],
+                    'pred_rating': round(stats['sum_sim_r'] / stats['sum_sim'], 4),
+                    'sim_avg': round(stats['sum_sim'] / len(vecinos_top), 4)
+                })
+                
+        df_res = pd.DataFrame(resultados)
+        df_top = df_res.nlargest(10, 'pred_rating').reset_index(drop=True)
+        return jsonify({
+            "algoritmo": "collab-uu",
+            "recomendaciones": df_top.to_dict(orient='records'),
+            "vecinos": [{"userId": uid, "similitud": sim} for uid, sim in vecinos_top.items()]
+        })
+        
+    elif algorithm == 'hibrido':
+        # 1. Contenido
+        pref_series_cont = pref_series_raw * 10.0
+        pref_series_cont = pref_series_cont[pref_series_cont > 0].sort_values(ascending=False)
+        res_cont = {}
+        if not pref_series_cont.empty:
+            candidatas = obtener_candidatas(-1, pref_series_cont, df_ratings_valid, pelicula_generos)
+            for mid, coincidentes in candidatas:
+                res = calcular_score(mid, coincidentes, pref_series_cont, df_peliculas, V_REF)
+                if res is not None: res_cont[mid] = res['score_final']
+                    
+        # 2. Collab
+        pref_0_1 = pref_series_raw / 10.0
+        user_vector = pd.Series(0.0, index=df_pref_union.columns)
+        for g, v in pref_0_1.items():
+            if g in user_vector.index: user_vector[g] = v
+        u_centered = user_vector.values - user_vector.values.mean()
+        u_norm = np.linalg.norm(u_centered)
+        res_col = {}
+        vecinos_top = {}
+        if u_norm > 0:
+            ratings_users = set(rating_matrix.index)
+            df_pref_filtered = df_pref_union[df_pref_union.index.isin(ratings_users)]
+            prefs_np = df_pref_filtered.values
+            means = prefs_np.mean(axis=1, keepdims=True)
+            centered = prefs_np - means
+            norms = np.linalg.norm(centered, axis=1)
+            similitudes = {}
+            for i, other_id in enumerate(df_pref_filtered.index):
+                if norms[i] == 0: continue
+                sim = np.dot(u_centered, centered[i]) / (u_norm * norms[i])
+                if not np.isnan(sim) and sim >= 0.1: similitudes[other_id] = float(sim)
+            vecinos_top = dict(sorted(similitudes.items(), key=lambda item: item[1], reverse=True)[:40])
+            predicciones = {}
+            for vec_id, sim in vecinos_top.items():
+                vec_ratings = rating_matrix.loc[vec_id].dropna()
+                for movie_id, r in vec_ratings.items():
+                    if r < 3.0: continue
+                    if movie_id not in predicciones: predicciones[movie_id] = {'sum_sim_r': 0, 'sum_sim': 0}
+                    predicciones[movie_id]['sum_sim_r'] += sim * r
+                    predicciones[movie_id]['sum_sim'] += sim
+            for mid, stats in predicciones.items():
+                res_col[mid] = stats['sum_sim_r'] / stats['sum_sim']
 
-    return jsonify({
-        "algoritmo": "nuevo-usuario",
-        "recomendaciones": df_top.to_dict(orient='records'),
-        "perfil_filtrado": {str(k): float(v) for k, v in pref_series.items()}
-    })
+        todas_movies = set(res_cont.keys()).union(set(res_col.keys()))
+        resultados = []
+        for mid in todas_movies:
+            sc_cont = res_cont.get(mid, 0.0)
+            sc_col = res_col.get(mid, 0.0)
+            sc_col_norm = sc_col / 5.0
+            if sc_cont == 0: sc_col_norm *= 0.8
+            if sc_col == 0: sc_cont *= 0.8
+            final = 0.5 * sc_cont + 0.5 * sc_col_norm
+            row = df_peliculas[df_peliculas['id'] == mid]
+            if not row.empty:
+                resultados.append({
+                    'movieId': int(mid),
+                    'titulo': row.iloc[0]['titulo'],
+                    'score_hibrido': round(final, 4)
+                })
+                
+        df_res = pd.DataFrame(resultados)
+        if df_res.empty:
+             return jsonify({"error": "No se encontraron recomendaciones."}), 404
+             
+        df_top = df_res.nlargest(10, 'score_hibrido').reset_index(drop=True)
+        return jsonify({
+            "algoritmo": "hibrido",
+            "recomendaciones": df_top.to_dict(orient='records'),
+            "vecinos": [{"userId": uid, "similitud": sim} for uid, sim in vecinos_top.items()]
+        })
 
 
 # ── Mejoras: Detalles y Pósters de Película ────────────────────────────────
