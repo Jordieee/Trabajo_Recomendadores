@@ -173,33 +173,10 @@ def filtrar_preferencias(user_id: int,
     return prefs_sorted.loc[seleccionados]
 
 
-# ── Demo con un usuario ───────────────────────────────────────────────────────
-print(f"\nFiltrado para usuario {eg_user}:")
-pref_filtrada = filtrar_preferencias(eg_user, df_pref_norm, n_top=5, umbral_salto=0.30)
-pref_completa = df_pref_norm.loc[eg_user].dropna().sort_values(ascending=False)
+# ── Variables globales exportadas ─────────────────────────────────────────────
+eg_user = USERS[3]
 
-print(f"  Géneros con datos: {len(pref_completa)}")
-print(f"  Géneros seleccionados tras filtrado: {len(pref_filtrada)}")
-print(f"\n  Géneros TOP seleccionados:")
-for g, v in pref_filtrada.items():
-    print(f"    ★ {g:25s}: {v:.3f}")
-
-# Gráfico: vector completo vs. vector filtrado
-fig, ax = plt.subplots(figsize=(14, 5))
-colors = ['#E74C3C' if g in pref_filtrada.index else '#AEB6BF' for g in pref_completa.index]
-bars = ax.bar(range(len(pref_completa)), pref_completa.values, color=colors, edgecolor='white')
-ax.set_xticks(range(len(pref_completa)))
-ax.set_xticklabels(pref_completa.index, rotation=45, ha='right', fontsize=10)
-ax.set_ylabel('Preferencia Normalizada [0,1]')
-ax.set_title(f'Vector de preferencias — Usuario {eg_user}\n(rojo = géneros seleccionados, gris = descartados)', fontweight='bold')
-ax.set_ylim(0, 1.1)
-red_patch  = mpatches.Patch(color='#E74C3C', label=f'Seleccionados ({len(pref_filtrada)})')
-grey_patch = mpatches.Patch(color='#AEB6BF', label='No seleccionados')
-ax.legend(handles=[red_patch, grey_patch])
-plt.tight_layout()
-plt.savefig(RESULT_DIR / 'T3_fig1_vector_filtrado.png', dpi=150, bbox_inches='tight')
-plt.show()
-print(f"💾 Gráfico guardado: T3_fig1_vector_filtrado.png")
+# (El código de demo y guardado de gráficos se ha movido al bloque __main__ abajo)
 
 # =============================================================================
 # %% ─── 4. FILTRADO DE ÍTEMS CANDIDATOS ──────────────────────────────────────
@@ -253,14 +230,7 @@ def obtener_candidatas(user_id: int,
     return candidatas
 
 
-# ── Demo ──────────────────────────────────────────────────────────────────────
-candidatas_demo = obtener_candidatas(
-    eg_user, pref_filtrada, df_ratings_valid, pelicula_generos
-)
-print(f"\nUsuario {eg_user}:")
-print(f"  Películas ya vistas: {df_ratings_valid[df_ratings_valid['userId']==eg_user]['movieId'].nunique()}")
-print(f"  Películas candidatas encontradas: {len(candidatas_demo)}")
-print(f"  Géneros de búsqueda: {list(pref_filtrada.index)}")
+# ── (El código de demo se movió al bloque __main__)
 
 # =============================================================================
 # %% ─── 5. CÁLCULO DEL SCORE DE INTERÉS r(u,i) ───────────────────────────────
@@ -292,15 +262,6 @@ print(f"  Géneros de búsqueda: {list(pref_filtrada.index)}")
 #   • La fiabilidad pondera suavemente (20%) → penalizar películas oscuras
 #     con 2 votos y media 9.9, pero no eliminarlas del todo.
 # =============================================================================
-
-print("\n" + "="*70)
-print("📐 5. CÁLCULO DEL SCORE DE INTERÉS r(u,i)")
-print("="*70)
-print("""
-  r(u,i) = α·AfinidadGénero + β·CalidadPelícula + γ·Fiabilidad
-  
-  con  α=0.50, β=0.30, γ=0.20  (configurables)
-""")
 
 def calcular_score(movie_id: int,
                    generos_coincidentes: set,
@@ -360,18 +321,7 @@ def calcular_score(movie_id: int,
     }
 
 
-# ── Ejemplo manual de cálculo ─────────────────────────────────────────────────
-print("Ejemplo manual de cálculo para 3 películas candidatas:")
-muestra = candidatas_demo[:3]
-for mid, coincidentes in muestra:
-    res = calcular_score(mid, coincidentes, pref_filtrada, df_peliculas, V_REF)
-    if res:
-        print(f"\n  🎬 {res['titulo']} (id={mid})")
-        print(f"     Géneros coincidentes : {res['generos_match']}")
-        print(f"     Afinidad             : {res['score_afinidad']:.4f}  (×0.50 = {0.5*res['score_afinidad']:.4f})")
-        print(f"     Calidad              : {res['score_calidad']:.4f}  (×0.30 = {0.3*res['score_calidad']:.4f})")
-        print(f"     Fiabilidad           : {res['score_fiabilidad']:.4f}  (×0.20 = {0.2*res['score_fiabilidad']:.4f})")
-        print(f"     SCORE FINAL          : {res['score_final']:.4f}")
+# (Ejemplo manual de cálculo se ha movido al bloque __main__)
 
 # =============================================================================
 # %% ─── 6. PIPELINE COMPLETO DE RECOMENDACIÓN ────────────────────────────────
