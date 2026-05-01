@@ -8,21 +8,6 @@
 #   - resultados/user_genre_counts.csv
 # =============================================================================
 
-# %% ─── 0. DEPENDENCIAS ───────────────────────────────────────────────────────
-import subprocess, sys
-
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package, "-q"])
-
-for pkg in ["pandas", "numpy", "matplotlib", "seaborn"]:
-    try:
-        __import__(pkg)
-    except ImportError:
-        print(f"Instalando {pkg}...")
-        install(pkg)
-
-print("✅ Dependencias OK")
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
