@@ -16,7 +16,7 @@
         <aside class="sidebar glass-panel">
             <div class="logo">
                 <i class="fa-solid fa-film"></i>
-                <h2>CineRecomienda</h2>
+                <h2>RecommenderAI</h2>
             </div>
 
             <!-- Algorithm Selector -->
@@ -169,7 +169,7 @@
                     <header class="section-header" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
                         <div class="header-text">
                             <h3 style="margin:0"><i class="fa-solid fa-chart-line"></i> Análisis de Calidad</h3>
-                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">Cálculo sobre set de test 80/20.</p>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">Cálculo sobre partición train/test 70/30.</p>
                         </div>
                         <button id="btnRecalculateMetrics" class="algo-tab" style="padding: 0.5rem 1rem; height: auto;">
                             <i class="fa-solid fa-arrows-rotate"></i> Recalcular
@@ -179,7 +179,7 @@
                         <div class="loader"></div>
                         <p>Evaluando modelos...</p>
                     </div>
-                    <div id="metricsContent" class="metrics-grid"></div>
+                    <div id="metricsContent" style="display: flex; flex-direction: column; width: 100%; box-sizing: border-box; overflow: hidden;"></div>
                 </section>
             </div>
         </main>
@@ -235,6 +235,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

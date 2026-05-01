@@ -205,32 +205,192 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderMetrics(data) {
         metricsContent.innerHTML = '';
-        const timestamp = data.timestamp ? `<p style="text-align:center; color:var(--text-muted); width:100%; margin-top:2rem;">Última actualización: ${data.timestamp}</p>` : '';
+        const timestamp = data.timestamp ? `<p style="text-align:center; color:var(--text-muted); width:100%; margin-top:2rem; font-size: 0.85rem;">Última actualización: ${data.timestamp} (Muestra: ${data.users ? data.users.length : '?'} usuarios)</p>` : '';
         
-        for (const [algo, metrics] of Object.entries(data)) {
-            if (algo === 'timestamp') continue;
-            const card = document.createElement('div');
-            card.className = 'metric-card';
-            
-            const prec = metrics.precision ? (metrics.precision * 100).toFixed(2) : '—';
-            const mae = metrics.mae || '—';
-            
-            card.innerHTML = `
-                <h4>${algo.toUpperCase()}</h4>
-                <div class="metric-value">${prec}%</div>
-                <div class="metric-label">Precision@10</div>
-                <div class="metric-value" style="font-size:1.5rem; margin-top:1.5rem">${mae}</div>
-                <div class="metric-label">Error Absoluto (MAE)</div>
-                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:1.5rem">${metrics.desc}</p>
-            `;
-            metricsContent.appendChild(card);
-        }
+        // Tabla resumen de promedios con diseño Premium
+        const tableHtml = `
+            <div style="width: 100%; margin-bottom: 3rem;">
+                <h4 style="margin-bottom: 1rem; color: var(--text-light); border-left: 4px solid var(--primary); padding-left: 0.5rem;">Resumen de Rendimiento Medio</h4>
+                <div style="overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    <table style="width: 100%; border-collapse: collapse; background: rgba(15,23,42,0.6); backdrop-filter: blur(10px);">
+                        <thead>
+                            <tr style="background: rgba(139, 92, 246, 0.1); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <th style="padding: 1.2rem 1rem; text-align: left; font-weight: 800; color: var(--primary);">Sistema Recomendador</th>
+                                <th style="padding: 1.2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Precisión</th>
+                                <th style="padding: 1.2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Recall</th>
+                                <th style="padding: 1.2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">F1 Score</th>
+                                <th style="padding: 1.2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">MAE</th>
+                                <th style="padding: 1.2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">nDCG</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${['contenido', 'collab_uu', 'hibrido'].map((algo, i) => {
+                                const colors = {
+                                    'contenido': '#ff7675',
+                                    'collab_uu': '#74b9ff',
+                                    'hibrido': '#55efc4'
+                                };
+                                const names = {
+                                    'contenido': 'Basado en Contenido',
+                                    'collab_uu': 'Colaborativo (UU)',
+                                    'hibrido': 'Híbrido Ponderado'
+                                };
+                                return `
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.02); transition: background 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                                    <td style="padding: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem;">
+                                        <div style="width: 12px; height: 12px; border-radius: 50%; background: ${colors[algo]}; box-shadow: 0 0 10px ${colors[algo]};"></div>
+                                        ${names[algo]}
+                                    </td>
+                                    <td style="padding: 1rem; text-align: center; font-family: monospace; font-size: 1.1rem;">${(data[algo]?.precision || 0).toFixed(4)}</td>
+                                    <td style="padding: 1rem; text-align: center; font-family: monospace; font-size: 1.1rem;">${(data[algo]?.recall || 0).toFixed(4)}</td>
+                                    <td style="padding: 1rem; text-align: center; font-family: monospace; font-size: 1.1rem;">${(data[algo]?.f1 || 0).toFixed(4)}</td>
+                                    <td style="padding: 1rem; text-align: center; font-family: monospace; font-size: 1.1rem; color: #fca5a5;">${(data[algo]?.mae || 0).toFixed(4)}</td>
+                                    <td style="padding: 1rem; text-align: center; font-family: monospace; font-size: 1.1rem; font-weight: bold; color: #bbf7d0;">${(data[algo]?.ndcg || 0).toFixed(4)}</td>
+                                </tr>
+                                `
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
         
+        metricsContent.innerHTML = tableHtml;
+
+        // Container para gráficos estructurado
+        const chartsHtml = `
+            <h4 style="margin-bottom: 1rem; color: var(--text-light); border-left: 4px solid var(--secondary); padding-left: 0.5rem;">Análisis Detallado por Usuario</h4>
+            <div style="width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+                <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(0,0,0,0.3);"><canvas id="chartPrecision"></canvas></div>
+                <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(0,0,0,0.3);"><canvas id="chartRecall"></canvas></div>
+                <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(0,0,0,0.3);"><canvas id="chartF1"></canvas></div>
+                <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(0,0,0,0.3);"><canvas id="chartMAE"></canvas></div>
+                <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: rgba(0,0,0,0.3); grid-column: 1 / -1;"><canvas id="chartNDCG" style="max-height: 400px;"></canvas></div>
+            </div>
+        `;
+        metricsContent.insertAdjacentHTML('beforeend', chartsHtml);
+
         if (timestamp) {
             const footer = document.createElement('div');
             footer.style.width = '100%';
             footer.innerHTML = timestamp;
             metricsContent.appendChild(footer);
+        }
+
+        // Render charts si tenemos datos por usuario
+        if (data.users && data.per_user_metrics) {
+            const labels = data.users.map(u => `U${u}`);
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = "'Outfit', sans-serif";
+            
+            const createChart = (ctxId, title, metricKey) => {
+                const ctx = document.getElementById(ctxId).getContext('2d');
+                
+                const getGradient = (color, opacity) => {
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, color.replace('1)', `${opacity})`));
+                    gradient.addColorStop(1, color.replace('1)', '0)'));
+                    return gradient;
+                };
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Contenido',
+                                data: data.per_user_metrics.contenido[metricKey],
+                                borderColor: 'rgba(255, 118, 117, 1)',
+                                backgroundColor: getGradient('rgba(255, 118, 117, 1)', 0.4),
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 3,
+                                pointRadius: 3,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: 'Colaborativo',
+                                data: data.per_user_metrics.collab_uu[metricKey],
+                                borderColor: 'rgba(116, 185, 255, 1)',
+                                backgroundColor: getGradient('rgba(116, 185, 255, 1)', 0.4),
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 3,
+                                pointRadius: 3,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: 'Híbrido',
+                                data: data.per_user_metrics.hibrido[metricKey],
+                                borderColor: 'rgba(85, 239, 196, 1)',
+                                backgroundColor: getGradient('rgba(85, 239, 196, 1)', 0.4),
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 3,
+                                pointRadius: 3,
+                                pointHoverRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: title,
+                                color: '#f8fafc',
+                                font: { size: 16, weight: 'bold' },
+                                padding: { bottom: 20 }
+                            },
+                            legend: {
+                                position: 'bottom',
+                                labels: { 
+                                    color: '#e2e8f0', 
+                                    usePointStyle: true,
+                                    padding: 20,
+                                    font: { weight: '600' }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleColor: '#fff',
+                                bodyColor: '#cbd5e1',
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1,
+                                padding: 12,
+                                boxPadding: 6
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                                ticks: { font: { size: 11 } }
+                            },
+                            y: { 
+                                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            };
+
+            // Para que los gráficos no se aplasten si no tienen una altura fija (añadido en CSS in-line arriba)
+            document.querySelectorAll('canvas').forEach(c => {
+                if(c.id !== 'chartNDCG') c.style.minHeight = '300px';
+            });
+
+            createChart('chartPrecision', 'Precisión @10', 'precision');
+            createChart('chartRecall', 'Recall por Usuario', 'recall');
+            createChart('chartF1', 'F1 Score', 'f1');
+            createChart('chartMAE', 'Error Absoluto Medio (MAE)', 'mae');
+            createChart('chartNDCG', 'Ganancia Acumulativa Descontada (nDCG)', 'ndcg');
         }
     }
 

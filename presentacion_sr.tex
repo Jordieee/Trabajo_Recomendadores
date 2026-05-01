@@ -1,0 +1,251 @@
+\documentclass[aspectratio=169]{beamer}
+
+% ---------- Tema modern (Metropolis) + estil UPV ----------
+\usetheme[numbering=fraction,progressbar=frametitle]{metropolis}
+\usefonttheme{professionalfonts}
+
+% Colores corporativos
+\definecolor{upvblue}{HTML}{003C71}
+\definecolor{upvlight}{HTML}{E6EEF5}
+\setbeamercolor{structure}{fg=upvblue}
+\setbeamercolor{progress bar}{fg=upvblue}
+\setbeamercolor{frametitle}{fg=black,bg=white}
+\setbeamercolor{block title}{fg=white,bg=upvblue}
+\setbeamercolor{block body}{bg=upvlight}
+\metroset{block=fill}
+
+% Idioma y paquetes
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{ragged2e}
+\usepackage{amsmath}
+
+% ---------- Metadatos ----------
+\title[Sistemas Recomendadores]{Sistema de Recomendación de Películas}
+\subtitle{Implementación de SR Contenido, Colaborativo, Híbrido y Grupos}
+\author{Jordi Linares Carrasquer}
+\institute{Universitat Politècnica de València\\ Màster en IA, Reconeixement de Formes i Imatge Digital}
+\date{Abril 2026}
+
+% Pie de página personalizado
+\setbeamertemplate{footline}{%
+  \leavevmode
+  \hbox{%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.8ex,dp=1ex,left]{author in head/foot}
+      \hspace{1ex}\textbf{UPV}
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.8ex,dp=1ex,center]{author in head/foot}
+      \insertshorttitle{} \textemdash{} \insertframenumber{}~/~\inserttotalframenumber
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.8ex,dp=1ex,right]{author in head/foot}
+       \textbf{MIARFID}\hspace{1ex}
+    \end{beamercolorbox}%
+  }%
+}
+\setbeamertemplate{navigation symbols}{}
+
+% Índice al inicio de cada sección
+\AtBeginSection[]{
+  \begin{frame}{Contenido}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+% Ajuste de espaciado
+\addtolength{\parskip}{0.3em}
+\RaggedRight
+
+% ---------- Documento ----------
+\begin{document}
+
+% Portada
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% Índice general
+\begin{frame}{Contenido}
+  \tableofcontents
+\end{frame}
+
+% =================================================================
+\section{Introducción y Datos Base}
+% =================================================================
+
+\begin{frame}{Dataset: The Movies Dataset}
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+      \begin{block}{Fuente}
+        Dataset procesado basado en Kaggle / IMDB.
+      \end{block}
+
+      \textbf{Características Principales:}
+      \begin{itemize}
+        \item \textbf{Películas:} 27.840 (clasificadas en 20 géneros).
+        \item \textbf{Usuarios:} 670.
+        \item \textbf{Interacciones:} 100.004 valoraciones (ratings de 0.5 a 5.0).
+        \item Se han excluido películas sin valoración o sin género.
+      \end{itemize}
+
+    \column{0.45\textwidth}
+      \textbf{Preprocesamiento y Metodología:}
+      \begin{itemize}
+        \item División estricta en \textbf{Entrenamiento (70\%)} y \textbf{Test (30\%)}.
+        \item Generación de una matriz de \textbf{Preferencias de Usuario} basada exclusivamente en el conjunto de entrenamiento.
+        \item Un rating $r$ a una película de $k$ géneros reparte su afinidad aportando $r/k$ a cada género.
+        \item Normalización de preferencias al rango $[0, 1]$.
+      \end{itemize}
+  \end{columns}
+\end{frame}
+
+% =================================================================
+\section{SR Basado en Contenido (Trabajo 3)}
+% =================================================================
+
+\begin{frame}{Perfil de Usuario y Búsqueda de Candidatos}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \textbf{1. Filtrado de Preferencias:}
+      \begin{itemize}
+        \item No se usa el vector completo de 20 géneros.
+        \item Se escogen los \textbf{5 géneros top}.
+        \item Se aplica un filtro de "salto brusco" (caída $>30\%$) para descartar géneros residuales prematuramente.
+      \end{itemize}
+
+    \column{0.50\textwidth}
+      \textbf{2. Selección de Candidatos:}
+      \begin{itemize}
+        \item Se eliminan los ítems del histórico del usuario (vistos en entrenamiento).
+        \item Solo son candidatas aquellas películas que tengan \textbf{al menos un género en común} con el perfil filtrado.
+      \end{itemize}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Cálculo del Score de Interés $r(u,i)$}
+  \begin{block}{Fórmula propuesta}
+    $r(u,i) = \alpha \cdot \text{AfinidadGénero} + \beta \cdot \text{CalidadPelícula} + \gamma \cdot \text{Fiabilidad}$
+  \end{block}
+
+  \vspace{0.3cm}
+  \textbf{Componentes:}
+  \begin{itemize}
+    \item \textbf{AfinidadGénero ($\alpha=0.50$):} Proporción del interés del usuario que cubre la película (suma de ratios de preferencias coincidentes).
+    \item \textbf{CalidadPelícula ($\beta=0.30$):} Puntuación media de la película normalizada.
+    \item \textbf{Fiabilidad ($\gamma=0.20$):} Confianza en la nota media, usando una relación logarítmica entre los votos de la película y la mediana de votos del catálogo ($V_{ref}$).
+  \end{itemize}
+\end{frame}
+
+% =================================================================
+\section{SR Colaborativo (Trabajo 4)}
+% =================================================================
+
+\begin{frame}{Enfoque Usuario-Usuario (Vecinos)}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \textbf{1. Cálculo de Similitud:}
+      \begin{itemize}
+        \item Matriz de similitud usando \textbf{Correlación de Pearson}.
+        \item Se comparan vectores completos (\textbf{Unión} de preferencias), rellenando con ceros los géneros no informados.
+        \item Evita la gran esparsidad de una matriz usuario-ítem tradicional.
+      \end{itemize}
+
+    \column{0.50\textwidth}
+      \textbf{2. Selección de Vecinos:}
+      \begin{itemize}
+        \item Se escogen los \textbf{$K=40$ vecinos} más afines (siempre que $sim \geq 0.1$).
+      \end{itemize}
+  \end{columns}
+
+  \vspace{0.3cm}
+  \begin{block}{Generación de la Recomendación}
+    Para cada película candidata, la predicción es la \textbf{media ponderada} de las valoraciones de los vecinos:
+    \[
+      \hat{r}_{u,i} = \frac{\sum_{v \in Vecinos} sim(u,v) \cdot r_{v,i}}{\sum_{v \in Vecinos} |sim(u,v)|}
+    \]
+  \end{block}
+\end{frame}
+
+% =================================================================
+\section{SR Híbrido Ponderado (Trabajo 5)}
+% =================================================================
+
+\begin{frame}{Fusión de Resultados}
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+      \textbf{Metodología Ponderada:}
+      \begin{itemize}
+        \item Se obtienen las predicciones de ambos algoritmos base.
+        \item $r(u,i)_{Hibrido} = \alpha \cdot r_{CB} + \beta \cdot r_{CF}$
+      \end{itemize}
+      
+      \vspace{0.2cm}
+      \textbf{Ponderación Dinámica:}
+      \begin{itemize}
+        \item Los pesos $\alpha$ y $\beta$ \textbf{no son fijos}.
+        \item Se calculan analizando la confianza de cada sistema para ese usuario específico.
+      \end{itemize}
+
+    \column{0.45\textwidth}
+      \begin{block}{Nivel de Confianza}
+        \textbf{Contenido ($\alpha$):}\\
+        Proporcional a la cantidad y fuerza de los géneros valorados por el usuario.\\
+        \vspace{0.1cm}
+        \textbf{Colaborativo ($\beta$):}\\
+        Promedio de similitud de Pearson de los $K$ vecinos encontrados.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% =================================================================
+\section{SR para Grupos (Trabajo 6)}
+% =================================================================
+
+\begin{frame}{Agregación de Recomendaciones}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \textbf{1. Generación de la Base:}
+      \begin{itemize}
+        \item Se calculan las recomendaciones individuales para cada miembro.
+        \item \textbf{Filtro estricto:} Si una película está en el histórico de \textbf{cualquier} miembro, se descarta para todo el grupo (para evitar spoilers o películas repetidas).
+      \end{itemize}
+
+    \column{0.50\textwidth}
+      \textbf{2. Técnicas de Consenso:}
+      \begin{itemize}
+        \item \textbf{Media (Average):} Promedio de los ratios individuales.
+        \item \textbf{Borda Count:} Ponderación en base al ranking posicional de cada miembro.
+        \item \textbf{Least Misery:} Prioriza que ningún miembro reciba una película con baja puntuación (el ratio del grupo es el mínimo individual).
+      \end{itemize}
+  \end{columns}
+\end{frame}
+
+% =================================================================
+\section{Conclusiones y UX}
+% =================================================================
+
+\begin{frame}{Conclusiones y Mejoras de Interfaz}
+  \begin{enumerate}
+    \item \textbf{Módulos Completos:} Se ha integrado exitosamente la secuencia lógica desde la inferencia de preferencias hasta la agregación grupal.
+    \item \textbf{Problema Cold-Start:} La aplicación aborda perfiles sin historial permitiendo generar usuarios nuevos "en caliente" (evaluando géneros a mano) tanto para SR Basado en Contenido como Colaborativo.
+    \item \textbf{Transparencia (Grupos):} La interfaz muestra visualmente la idoneidad (rating en estrellas) de cada película recomendada para cada individuo dentro de un grupo, facilitando el consenso.
+    \item \textbf{Solidez y Fiabilidad:} Filtrado dinámico de ítems vistos, evitando la redundancia y mejorando la calidad de la recomendación en todos los métodos.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{}
+  \centering
+  \Large Gracias por su atención
+
+  \vspace{1cm}
+  \normalsize
+  \textbf{Jordi Linares Carrasquer}\\
+  \textit{Universitat Politècnica de València}\\
+
+  \vspace{0.5cm}
+  \footnotesize
+  Sistemas Recomendadores -- MIARFID -- Abril 2026
+\end{frame}
+
+\end{document}

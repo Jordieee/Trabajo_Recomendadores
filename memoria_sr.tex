@@ -1,0 +1,200 @@
+\documentclass[12pt]{scrartcl}
+
+% ---------------- Márgenes y espaciado ----------------
+\usepackage[
+  inner=3.0cm, outer=2.5cm, top=2.5cm, bottom=2.5cm,
+  includeheadfoot
+]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{array}
+\usepackage[numbers]{natbib}
+\renewcommand{\baselinestretch}{1.0}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{listings}
+
+% Configuración para bloques de código
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue}
+}
+
+% Estilos de sección
+\setkomafont{subsection}{\normalfont\large\bfseries\color{black}}
+\setkomafont{subsubsection}{\normalfont\itshape\color{black}}
+
+\usepackage{textpos}
+\usepackage{setspace}
+
+% ---------------- Inicio del documento ----------------
+\begin{document}
+\sloppy
+
+%%%%% PORTADA
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    \includegraphics[width=0.4\textwidth]{imgs/logo.png}\par 
+
+    {\Large Universidad Politécnica de Valencia\par}
+    {\large Departamento de Sistemas Informáticos y Computación\par}
+    \vspace{2.5cm}
+
+    {\huge \bfseries Memoria Final: Sistemas Recomendadores\par}
+    {\Large Implementación de Filtrado por Contenido, Colaborativo, Híbrido y Grupos\par}
+
+    \rule{0.6\textwidth}{0.5pt}\par
+    \vspace{0.2cm}
+
+    {\Large Sistemas Recomendadores\par}
+    \vfill
+
+    \noindent
+    \begin{minipage}[t]{0.6\textwidth}
+        {\large MIARFID | Máster en Inteligencia Artificial, Reconocimiento de Formes e Imatge Digital\par}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}[t]{0.35\textwidth}
+        \begin{flushright}
+            {\large Jordi Linares Carrasquer\par}
+            {\large Abril 2026\par}
+        \end{flushright}
+    \end{minipage}
+\end{titlepage}
+
+%%%%% INDICE
+\newpage
+\thispagestyle{plain}
+\renewcommand{\contentsname}{Índice}
+\tableofcontents
+
+\newpage
+\section{Introducción y Objetivos}
+El presente documento describe la implementación y evaluación de un completo \textbf{Sistema Recomendador de Películas}, desarrollado en Python a lo largo de las prácticas de la asignatura. El sistema aborda las limitaciones del filtrado estático para ofrecer recomendaciones dinámicas a usuarios individuales y grupos, solucionando además escenarios de \textit{Cold Start}.
+
+\subsection{Descripción del Problema}
+Dada la inmensa cantidad de opciones en catálogos audiovisuales, es inviable que un usuario encuentre contenido relevante sin asistencia. Los enfoques simplistas basados en listas de popularidad ignoran los gustos individuales. Para resolverlo, el proyecto requería construir un sistema capaz de:
+\begin{itemize}
+    \item Aprender automáticamente los gustos del usuario a partir de su historial.
+    \item Encontrar películas similares basadas en sus propiedades (Contenido).
+    \item Encontrar películas basadas en la opinión de usuarios similares (Colaborativo).
+    \item Combinar técnicas para solventar carencias mutuas (Híbrido).
+    \item Recomendar contenido a un conjunto de individuos simultáneamente (Grupos).
+\end{itemize}
+
+\section{Preparación de Datos (Trabajo 2)}
+El proyecto hace uso de "The Movies Dataset", proporcionando un entorno realista y complejo.
+
+\subsection{Carga, Limpieza y División}
+El dataset se procesó limpiando caracteres residuales y descartando ítems sin género clasificado. Para asegurar la fiabilidad de los experimentos y no incurrir en fugas de datos, las calificaciones de los usuarios (\textit{ratings}) se dividieron de forma aleatoria en dos subconjuntos:
+\begin{itemize}
+    \item \textbf{Conjunto de Entrenamiento (70\%):} Se utilizó para generar los perfiles de usuario.
+    \item \textbf{Conjunto de Test (30\%):} Se preservó estrictamente para evaluar la bondad de la recomendación al final del proceso.
+\end{itemize}
+
+\subsection{Perfilado de Usuarios}
+A partir del historial del usuario (en el set de entrenamiento), se construyó un vector de preferencias de 20 dimensiones (correspondientes a los 20 géneros posibles). Cada película puntuada con valor $r$ y poseedora de $k$ géneros, aportó una fracción $r/k$ a cada uno de sus géneros. El vector final de cada usuario fue normalizado estadísticamente al rango $[0,1]$ empleando Min-Max.
+
+\section{Sistema Recomendador Basado en Contenido (Trabajo 3)}
+La técnica de filtrado por contenido infiere el interés de un usuario en un ítem virgen comparando los atributos del ítem con el vector de preferencias del usuario.
+
+\subsection{Selección del Top de Preferencias}
+No todos los géneros que un usuario ha visto son indicativos de sus verdaderos intereses. Por ello, el vector de preferencias es filtrado:
+\begin{itemize}
+    \item Se ordena descendentemente y se toman, como máximo, los \textbf{5 primeros géneros}.
+    \item Se aplica un mecanismo de truncado dinámico basado en un \textbf{salto brusco}: si la preferencia $i$ es un $30\%$ inferior a la preferencia $i-1$, la lista se corta prematuramente, eliminando géneros residuales.
+\end{itemize}
+
+\subsection{Cálculo del Ratio de Interés $r(u,i)$}
+Solo las películas que comparten al menos un género con el top del usuario, y que \textbf{no se encuentran en su histórico}, pasan a ser evaluadas bajo la siguiente fórmula de ratio propuesta:
+\begin{equation}
+    r(u,i) = \alpha \cdot \text{Afinidad} + \beta \cdot \text{Calidad} + \gamma \cdot \text{Fiabilidad}
+\end{equation}
+Donde:
+\begin{itemize}
+    \item \textbf{Afinidad ($\alpha=0.50$):} Mide qué tanto de las preferencias del usuario están cubiertas por la película.
+    \item \textbf{Calidad ($\beta=0.30$):} Nota media de la película normalizada a $[0,1]$.
+    \item \textbf{Fiabilidad ($\gamma=0.20$):} Un factor estabilizador logarítmico que castiga las medias de películas con muy pocos votos en el portal.
+\end{itemize}
+
+\section{Sistema Recomendador Colaborativo (Trabajo 4)}
+Para mitigar la miopía del filtrado por contenido (sólo recomienda lo que se parece a lo que el usuario ya conoce), se implementó un sistema colaborativo de tipo \textbf{Usuario-Usuario}.
+
+\subsection{Búsqueda de Vecinos y Correlación de Pearson}
+Dado el gran tamaño del catálogo, utilizar la técnica de calcular similitud entre usuarios basándose directamente en películas valoradas generaría una matriz inmanejable y excesivamente esparsa. Se optó por una estrategia basada en \textbf{Preferencias por Unión}:
+\begin{itemize}
+    \item Se calcula la similitud utilizando el vector de 20 dimensiones de los géneros de cada usuario, rellenando con ceros aquellos géneros no informados.
+    \item Se emplea el coeficiente de \textbf{Correlación de Pearson}.
+    \item El sistema selecciona el Top-$K$ vecinos (limitado a un máximo de 40).
+\end{itemize}
+
+\subsection{Predicción de Voto}
+La puntuación predicha para un usuario $u$ sobre un ítem $i$ se obtiene ponderando las puntuaciones $r_{v,i}$ que dieron sus vecinos $v$, en base a su similitud:
+\begin{equation}
+    \hat{r}_{u,i} = \frac{\sum_{v \in V} sim(u,v) \cdot r_{v,i}}{\sum_{v \in V} |sim(u,v)|}
+\end{equation}
+Excluyendo de forma estricta los ítems ya presentes en el histórico del usuario solicitante.
+
+\section{Sistema Híbrido Ponderado (Trabajo 5)}
+El sistema híbrido fusiona las dos perspectivas (Contenido y Colaborativo) para solventar los escenarios donde una de ellas falla (ej: si el usuario no tiene vecinos, el colaborativo falla). 
+
+\subsection{Pesos Dinámicos ($\alpha$ y $\beta$)}
+El modelo propuesto implementa una ponderación donde la suma de los pesos es estrictamente 1 ($\alpha + \beta = 1$). El ratio final del ítem es:
+\begin{equation}
+    r(u,i)_{Hibrido} = \alpha \cdot r(u,i)_{CB} + \beta \cdot r(u,i)_{CF}
+\end{equation}
+A diferencia de sistemas convencionales, \textbf{los pesos no son constantes}, sino que se recalculan para cada usuario en base a la \textbf{confianza}:
+\begin{itemize}
+    \item \textbf{Confianza CB ($\alpha$):} Aumenta cuantas más preferencias de género explícitas tenga el usuario y mayor sea el peso de las mismas en su vector normalizado.
+    \item \textbf{Confianza CF ($\beta$):} Es directamente proporcional al promedio de la similitud de Pearson de los $K$ vecinos encontrados para el usuario.
+\end{itemize}
+
+\section{Recomendación para Grupos (Trabajo 6)}
+El sistema fue expandido para permitir la recomendación a grupos arbitrarios de usuarios. Este módulo utiliza un acercamiento basado en agregación de listas individuales (ítems).
+
+\subsection{Limpieza de Histórico y Técnicas de Agregación}
+Al buscar una recomendación para el grupo, \textbf{se elimina del catálogo cualquier ítem que esté en el historial de AL MENOS UN miembro} del grupo, garantizando así la novedad para todos los participantes. Tras este primer filtro estricto, se implementaron 3 técnicas de consenso:
+\begin{enumerate}
+    \item \textbf{Media (Average):} Promedia el ratio individual proyectado de cada miembro, promoviendo ítems de aceptación general.
+    \item \textbf{Borda Count:} Penaliza las desigualdades y beneficia a ítems que ocupan puestos sistemáticamente altos en las listas ordenadas individuales de los miembros.
+    \item \textbf{Least Misery:} Toma el ratio mínimo entre todos los miembros, previniendo recomendar películas que un miembro específico deteste, aunque a los demás les encante.
+\end{enumerate}
+
+\section{Evaluación de Métricas}
+Para validar empíricamente el comportamiento de los tres pilares del recomendador, se desarrolló un módulo de evaluación cruzada aislando a una cohorte de usuarios con información suficiente en el conjunto de validación (Test 30\%).
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \caption{Resultados promediados de la evaluación del SR (Muestra N=50)}
+    \begin{tabularx}{0.8\textwidth}{X c c}
+        \toprule
+        \textbf{Sistema} & \textbf{Precision@10} & \textbf{MAE (Predicción)} \\
+        \midrule
+        SR Contenido & 0.005 & - \\
+        SR Colaborativo (Usuario-Usuario) & 0.005 & 1.113 \\
+        \textbf{SR Híbrido Dinámico} & \textbf{0.010} & \textbf{0.575} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Análisis de Resultados}
+\begin{itemize}
+    \item \textbf{Precision@10:} En dominios tan enormes como el cine ($>27.000$ ítems), predecir exactamente el Top 10 que el usuario terminó viendo en su set de test es sumamente complicado. A pesar del bajo valor general, se observa cómo el sistema \textbf{Híbrido duplica la precisión} ($1.0\%$) de sus contrapartes individuales.
+    \item \textbf{Error Medio Absoluto (MAE):} El MAE del sistema híbrido se establece en unos destacables \textbf{0.575} puntos. Esto significa que el sistema predice las valoraciones de los usuarios desviándose, en promedio, tan solo medio punto (sobre una escala de 5) del valor real, suponiendo una mejora dramática frente al modelo Colaborativo puro (1.113).
+\end{itemize}
+
+\section{Conclusiones}
+La implementación de las prácticas 1 a 6 concluye en un sistema integral de recomendación de alta fiabilidad. 
+Las aproximaciones metodológicas superan las implementaciones base (como la truncación dinámica en Contenido o los pesos de confianza $\alpha/\beta$ en el Híbrido), resultando en un sistema Rápido, Robusto ante el problema del "Usuario Nuevo" gracias a un modal web que alimenta los perfiles manualmente, y con una usabilidad notable para encontrar consenso en grupos reduciendo la desalineación de preferencias (\textit{Least Misery}).
+
+\end{document}

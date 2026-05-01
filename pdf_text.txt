@@ -1,0 +1,302 @@
+Trabajo 7
+Evaluación del SR
+SR
+Sistemas Recomendadores
+Evaluar el 
+funcionamiento del 
+recomendador
+•Comprobar el 
+funcionamiento de cada 
+técnica
+•Comparar cada técnica 
+entre siRecomendación para 
+un único usuario
+•Solo para usuarios del 
+dataset
+•Seleccionar 20 usuarios 
+aleatoriamente
+•Los mismos usuarios se 
+usarán para todas las 
+métricas
+Objetivos
+2Puntuaciones de usuarios dadas a las películas
+•No todos los usuarios tienen puntuados todos los ítems
+•Cuidado!! Al haber eliminado películas del fichero, puede que las 
+películas puntuadas no existan
+•Contienen:
+•Identificador de usuario
+•Identificador de la película
+•Ratio ( valor entre 0.5 y 5 )
+Training set: 70% Test set: 30%
+Fichero del dataset: ratings.csv o 
+ratings_small.csv
+3Listas de ítems
+Precisión, recall , F1 score y
+nDCG
+•Listas de ítems relevantes: 
+lista de ítems recomendados 
+relevantes por encima de 
+umbralrecomendados
+•Lista de ítems de test 
+relevantes por encima de 
+umbraltest
+MAE
+•Listas de ítems 
+recomendados (todos)
+•Lista de ítems de test (todos)
+•Usar la 
+ intersección de las 
+listasLista de ítems para MAE: intersección
+Lista de ítems 
+recomendados
+Para cada uno 
+de los ítems 
+recomendados•Todos los ítems recomendados
+•Buscar si el ítem lo ha puntuado 
+el usuario (fichero de test)
+•Si el ítem lo ha puntuado, usar 
+el ítem
+•Si no lo ha puntuado, eliminar 
+el ítem de la comparación
+5Métricas
+Precisión , recall y F1
+•Mide el acierto de la 
+recomendación 
+(porcentaje de ítems 
+recomendados o no)
+MAE
+•Mide el acierto de los 
+ratios
+nDCG
+•Mide orden de las 
+recomendaciones 
+relevantes
+6Precisión, 
+ recall
+ y F1 score
+Precisión
+Porcentaje de ítems 
+recomendados que 
+son relevantes (de 
+interés)
+para el usuario
+Probabilidad de que un 
+elemento seleccionado 
+sea relevante
+Recall
+Porcentaje de ítems 
+relevantes para el 
+usuario que son 
+recomendados
+Probabilidad de 
+seleccionar un 
+elemento relevante
+F1 score
+Balance entre precisión 
+y recall
+Media armónica de 
+ambos valores
+Un mejor F1 score 
+indica un mejor balance 
+entre precisión y recall
+Mayor F1, mejor 
+recomendación
+7𝑃𝑟𝑒𝑐𝑖𝑠𝑖𝑜𝑛 =𝑅𝑒𝑐𝑜𝑚𝑒𝑛𝑑𝑎𝑑𝑜𝑠 ∩𝑅𝑒𝑙𝑒𝑣𝑎𝑛𝑡𝑒𝑠
+𝑅𝑒𝑐𝑜𝑚𝑒𝑛𝑑𝑎𝑑𝑜𝑠
+𝑅𝑒𝑐𝑎𝑙𝑙=𝑅𝑒𝑐𝑜𝑚𝑒𝑛𝑑𝑎𝑑𝑜𝑠 ∩𝑅𝑒𝑙𝑒𝑣𝑎𝑛𝑡𝑒𝑠
+𝑅𝑒𝑙𝑒𝑣𝑎𝑛𝑡𝑒𝑠
+𝐹1=2×𝑃𝑟𝑒𝑐𝑖𝑠𝑖𝑜𝑛 ×𝑅𝑒𝑐𝑎𝑙𝑙
+𝑃𝑟𝑒𝑐𝑖𝑠𝑖𝑜𝑛 +𝑅𝑒𝑐𝑎𝑙𝑙Precisión, recall y F1 score: 
+ gráficas
+Ejes
+X: usuarios
+Y: valor de 
+precisión, 
+recall y f1
+Gráfica 1: RS 
+basado en 
+contenido
+Línea para 
+precisión
+Línea para 
+recall
+Línea para 
+F1
+Gráfica 2: RS 
+colaborativo
+Línea para 
+precisión
+Línea para 
+recall
+Línea para 
+F1
+Gráfica 3: RS 
+híbrido
+Línea para 
+precisión
+Línea para 
+recall
+Línea para 
+F1
+8Precisión, recall y F1 score: 
+ gráficas
+Gráfica 4: 
+Precisión
+Línea para SR BC
+Línea para SR Col
+Línea para 
+híbrido
+Gráfica 5: 
+Recall
+Línea para SR BC
+Línea para SR Col
+Línea para 
+híbrido
+Gráfica 6: F1
+Línea para SR BC
+Línea para SR Col
+Línea para 
+híbrido
+9Precisión, recall y F1 score
+Comprobar 
+como funciona 
+cada técnica
+Comparar las 
+técnicas entre 
+sí
+10MAE
+Error absoluto medio MAE
+•Media de la diferencia 
+entre el ratio predicho 
+por el recomendador y el 
+ratio dado por el usuario
+•Se usan valores absolutos 
+porque solo interesan las 
+diferencias, sean 
+positivas o negativas
+•Cuanto menor es el MAE, 
+mejor recomendación 
+(ideal MAE=0)
+Gráfica
+•Ejes
+•X usuario
+•Y valor de MAE
+•Una línea para cada 
+recomendador
+Conclusiones
+•Comprobar como 
+funciona cada técnica
+•Comparar las técnicas 
+entre sí
+Nrp
+MAEN
+ii i
+
+1| |
+11p: ratio del recomendador
+r: ratio del usuario
+N: nºítemsNormalized discounted cumulative gain 
+ nDCG
+Discounted cumulative gain DCG
+•Ganancia acumulada 
+descontada
+•Penaliza los elementos que 
+aparecen más abajo en la lista
+•Un ítem relevante que 
+aparece abajo en la lista, es 
+una mala recomendación
+•Mayor DCG mejor 
+recomendación
+Normalized discounted 
+cumulative gain nDCG
+•Ganancia acumulada 
+descontada normalizada
+•Se ordena la lista de ítems 
+recomendados por relevancia y 
+se calcula su DGC (IDGC): 
+ DGC 
+de test
+•
+Valor entre 0 y 1. Cuanto más 
+se acerca nDCG a 1 mejor es 
+la recomendación
+12𝐷𝐶𝐺=෍
+𝑖=1𝑛𝑠𝑐𝑜𝑟𝑒𝑖
+𝑙𝑜𝑔2(𝑖+1) 𝑛𝐷𝐶𝐺=𝐷𝐶𝐺
+𝐼𝐷𝐶𝐺Normalized discounted cumulative gain 
+ nDCG
+Usar nDCG para comparar la lista de ítems del usuario con los de test
+•Seleccionar de la lista de recomendados los ítems que superan un 
+umbralrec
+•Seleccionar de la lista de test los ítems superan un umbraltest
+•Asignar un score a la lista de test (definido como queráis)
+•Para cada ítem en la lista de recomendados
+•Si el ítem aparece en la lista de test, asignarle el score de test
+•Si no aparece, asignar el score 0
+•Calcular DCGrecomendados y DCGtest(ideal)
+•Compararlos usando nDCG 13Ejemplo
+14Rec Ratio
+Ítem 1 0.92
+Ítem 2 0.85
+Ítem 3 0.8
+Ítem 4 0.6
+Ítem 5 0.55Test Ratio Score de 
+relevancia
+Ítem 2 0.95 4
+Ítem 6 0.8 3
+Ítem 3 0.65 2
+Ítem 7 0.35 1
+𝐷𝐶𝐺𝑅𝑒𝑐=0
+𝑙𝑜𝑔2(1+1)+ 4
+𝑙𝑜𝑔2(1+2)+ 2
+𝑙𝑜𝑔2(1+3)+ 0
+𝑙𝑜𝑔2(1+4)+ 0
+𝑙𝑜𝑔21+5
+𝐷𝐶𝐺𝑅𝑒𝑐=0+2.52+1+0+0=3.52
+𝐷𝐶𝐺𝑇𝑒𝑠𝑡=4
+𝑙𝑜𝑔2(1+1)+ 3
+𝑙𝑜𝑔2(1+2)+ 2
+𝑙𝑜𝑔2(1+3)+ 1
+𝑙𝑜𝑔2(1+4)
+𝐷𝐶𝐺𝑇𝑒𝑠𝑡=4+1.89+1+0.43=7.32𝑛𝐷𝐶𝐺=3.52
+7.32=0.48Rec Score de 
+relevancia
+Ítem 1 0
+Ítem 2 4
+Ítem 3 2
+Ítem 4 0
+Ítem 5 0
+Normalized discounted cumulative gain 
+ nDCG
+Para cada usuario
+•Para cada SR
+•Obtener nDCG
+Gráfica
+•Ejes
+•X usuario
+•Y valor de nDCG
+•Una línea para cada 
+recomendador
+Conclusiones
+•Comprobar como funciona cada 
+técnica
+•Comparar las técnicas entre sí
+15Medias
+Crear una tabla o gráfica con el 
+promedio de las métricas para 
+cada SR (para cada usuario)
+Usarla para comparar los 
+recomendadores
+16
+SR Precisión Recall F1 MAE nDCG
+BC
+Col
+HíbridoProceso
+Para cada usuario
+Obtener la lista de ítems de test del usuario (eliminar las 
+películas que no existan)
+Para las BRT colaborativa, BRT basada en contenido e 
+híbrida
+Obtener la lista de ítems recomendados al usuario con el 
+SR correspondiente
+Comparar las listas (listas diferentes según métrica)
